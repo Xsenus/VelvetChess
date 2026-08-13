@@ -6,8 +6,9 @@
 
 - Полные базовые правила шахмат: легальность хода, шах/мат/пат, рокировка, en passant, превращение, правило 50 ходов и недостаток материала.
 - 4 уровня ИИ с разной глубиной, случайностью и лимитом времени.
+- Автосохранение и продолжение партии, отмена полного хода и SAN-история.
 - Отзывчивая доска на `GraphicsView`, без тяжёлых игровых движков.
-- 50 популярных задач Lichess, отобранных по популярности, с проверенными UCI-решениями, подсказками и рейтингом.
+- 50 популярных задач Lichess, отобранных по популярности, с проверенными UCI-решениями, подсказками, рейтингом и сохранением прогресса.
 - Тёмный адаптивный интерфейс, фирменный арт, иконка и splash screen.
 - Контракты для будущего серверного онлайн-режима.
 - Тесты ядра и всех 50 решений.
@@ -26,6 +27,7 @@
 
 ```powershell
 dotnet workload install maui-android
+dotnet build src/VelvetChess.App/VelvetChess.App.csproj -t:InstallAndroidDependencies -f net9.0-android -p:AcceptAndroidSdkLicenses=True
 dotnet restore VelvetChess.sln
 dotnet test tests/VelvetChess.Core.Tests -c Release
 dotnet build src/VelvetChess.App/VelvetChess.App.csproj -f net9.0-android -c Debug

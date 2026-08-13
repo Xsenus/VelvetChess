@@ -77,21 +77,23 @@ img.paste(art.crop((0,80,W,760)),(0,0)); d=ImageDraw.Draw(img)
 text(d,(72,814),"ВАША ПАРТИЯ. ВАШ ТЕМП.",25,GOLD,True)
 for i,line in enumerate(wrap(d,"Красивые шахматы, которые всегда рядом",900,64,True)): text(d,(72,875+i*74),line,64,IVORY,True)
 text(d,(72,1060),"Играйте и тренируйтесь полностью офлайн",30,MUTED)
-button(d,1150,"Играть против компьютера"); button(d,1290,"50 тактических задач",BURGUNDY,"#FFFFFF")
+button(d,1150,"Продолжить партию"); button(d,1290,"50 тактических задач",BURGUNDY,"#FFFFFF")
 rounded(d,(72,1450,W-72,1690),28,SURFACE); text(d,(110,1500),"4 УРОВНЯ СЛОЖНОСТИ",24,GOLD,True)
-for i,line in enumerate(wrap(d,"От первых ходов до глубокого позиционного поиска",820,31)): text(d,(110,1550+i*42),line,31,MUTED)
+for i,line in enumerate(wrap(d,"Решено 12/50 · Партий 7 · Побед 3",820,31)): text(d,(110,1550+i*42),line,31,MUTED)
 save(img,"01_home.png")
 
 # 02 — game.
 img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Локальная партия","Уровень: Любитель")
 rounded(d,(54,290,W-54,1318),32,SURFACE); board(d,78,314,924,"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 1 2")
-text(d,(W//2,1384),"Ваш ход",32,IVORY,True,"mm"); button(d,1450,"Новая партия")
-text(d,(W//2,1648),"Быстро • Честные правила • Без рекламы",25,MUTED,False,"mm")
+text(d,(W//2,1370),"Ваш ход",32,IVORY,True,"mm"); text(d,(W//2,1420),"1. e4  e5   2. Nf3  Nc6",24,MUTED,False,"mm")
+rounded(d,(72,1470,486,1582),34,GOLD); text(d,(279,1526),"Новая партия",30,"#101522",True,"mm")
+rounded(d,(510,1470,W-72,1582),34,RAISED); text(d,(759,1526),"Отменить ход",30,"#FFFFFF",True,"mm")
+text(d,(W//2,1675),"Автосохранение • Честные правила • Без рекламы",25,MUTED,False,"mm")
 save(img,"02_local_game.png")
 
 # 03 — list.
 img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Тактическая коллекция","50 проверенных позиций")
-items=[("Мат в 1 · 1",923),("Вилка · 2",1204),("Отвлечение · 3",1421),("Эндшпиль · 4",1588),("Вскрытое нападение · 5",1712),("Завлечение · 6",1850)]
+items=[("РЕШЕНО · Мат в 1 · 1",923),("РЕШЕНО · Вилка · 2",1204),("Отвлечение · 3",1421),("Эндшпиль · 4",1588),("Вскрытое нападение · 5",1712),("Завлечение · 6",1850)]
 for i,(label,rating) in enumerate(items):
     y=300+i*230; rounded(d,(54,y,W-54,y+190),28,SURFACE); text(d,(94,y+50),label,38,IVORY,True); text(d,(94,y+112),f"Рейтинг {rating} · решите без подсказки",25,MUTED); text(d,(W-108,y+94),"›",54,GOLD,True,"mm")
 save(img,"03_puzzles.png")

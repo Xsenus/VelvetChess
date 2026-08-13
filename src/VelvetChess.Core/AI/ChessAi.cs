@@ -61,15 +61,16 @@ public sealed class ChessAi(int? randomSeed = null)
         var key = board.ToFen();
         if (_table.TryGetValue(key, out var cached) && cached.depth >= depth) return cached.score;
         var best = -MateScore;
+        var fullySearched = true;
         foreach (var move in OrderMoves(board, board.GenerateLegalMoves()))
         {
             var next = board.Clone(); next.ApplyLegalMove(move);
             var score = -Negamax(next, depth - 1, -beta, -alpha, watch, deadline, token, ply + 1);
             if (score > best) best = score;
             if (score > alpha) alpha = score;
-            if (alpha >= beta || watch.ElapsedMilliseconds >= deadline) break;
+            if (alpha >= beta || watch.ElapsedMilliseconds >= deadline) { fullySearched = false; break; }
         }
-        if (watch.ElapsedMilliseconds < deadline) _table[key] = (depth, best);
+        if (fullySearched && watch.ElapsedMilliseconds < deadline) _table[key] = (depth, best);
         return best;
     }
 

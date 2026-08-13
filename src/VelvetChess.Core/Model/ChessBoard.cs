@@ -341,7 +341,7 @@ public sealed class ChessBoard
         if (pieces.Length == 1) return true;
         if (pieces.All(x => x.piece.Type == PieceType.Bishop))
             return pieces.Select(x => ((x.square % 8) + (x.square / 8)) % 2).Distinct().Count() == 1;
-        return pieces.Length <= 2 && pieces.All(x => x.piece.Type == PieceType.Knight);
+        return false;
     }
 
     private string PositionKey()

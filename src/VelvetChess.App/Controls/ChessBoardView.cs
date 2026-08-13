@@ -72,7 +72,7 @@ public sealed class ChessBoardView : GraphicsView
                 if (!piece.IsNone)
                 {
                     canvas.FontColor = piece.Color == PieceColor.White ? Color.FromArgb("#FFF9EB") : Color.FromArgb("#111629");
-                    canvas.FontSize = cell * .76f; canvas.Font = new Microsoft.Maui.Graphics.Font("Segoe UI Symbol");
+                    canvas.FontSize = cell * .76f; canvas.Font = new Microsoft.Maui.Graphics.Font("ChessPieces");
                     canvas.DrawString(Symbol(piece), rect, HorizontalAlignment.Center, VerticalAlignment.Center);
                 }
             }
