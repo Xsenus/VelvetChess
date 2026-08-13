@@ -1,0 +1,106 @@
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "store" / "rustore"
+SHOTS = OUT / "screenshots"
+GRAPHICS = OUT / "graphics"
+SHOTS.mkdir(parents=True, exist_ok=True)
+GRAPHICS.mkdir(parents=True, exist_ok=True)
+
+W, H = 1080, 1920
+NAVY, SURFACE, RAISED = "#0B1020", "#151B2E", "#202841"
+GOLD, IVORY, MUTED, BURGUNDY = "#D6AE68", "#F3E9D6", "#9DA7BE", "#6E183E"
+FONT = Path(r"C:\Windows\Fonts\segoeui.ttf")
+BOLD = Path(r"C:\Windows\Fonts\segoeuib.ttf")
+SYMBOL = Path(r"C:\Windows\Fonts\seguisym.ttf")
+
+def font(size, bold=False, symbol=False):
+    return ImageFont.truetype(str(SYMBOL if symbol else BOLD if bold else FONT), size)
+
+def rounded(draw, box, radius, fill, outline=None, width=1):
+    draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
+
+def text(draw, xy, value, size, fill=IVORY, bold=False, anchor=None):
+    draw.text(xy, value, font=font(size, bold), fill=fill, anchor=anchor)
+
+def wrap(draw, value, max_width, size, bold=False):
+    words, lines, current = value.split(), [], ""
+    for word in words:
+        trial = (current + " " + word).strip()
+        if draw.textbbox((0,0), trial, font=font(size,bold))[2] <= max_width: current = trial
+        else: lines.append(current); current = word
+    if current: lines.append(current)
+    return lines
+
+def button(draw, y, label, fill=GOLD, color="#101522"):
+    rounded(draw, (72,y,W-72,y+112), 34, fill)
+    text(draw, (W//2,y+56), label, 34, color, True, "mm")
+
+def header(draw, title, subtitle):
+    text(draw, (72,88), "Шахматы Velvet", 30, GOLD, True)
+    text(draw, (72,154), title, 56, IVORY, True)
+    text(draw, (72,226), subtitle, 27, MUTED)
+
+def board(draw, x, y, size, fen):
+    fields = fen.split()[0].split('/')
+    pieces = {}
+    glyphs = {'K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙','k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟'}
+    for row, rank in enumerate(fields):
+        file = 0
+        for c in rank:
+            if c.isdigit(): file += int(c)
+            else: pieces[(file,row)] = c; file += 1
+    cell = size//8
+    for row in range(8):
+        for col in range(8):
+            fill = "#E6D4B7" if (row+col)%2==0 else "#6E4051"
+            draw.rectangle((x+col*cell,y+row*cell,x+(col+1)*cell,y+(row+1)*cell), fill=fill)
+            p = pieces.get((col,row))
+            if p:
+                draw.text((x+col*cell+cell//2,y+row*cell+cell//2-3),glyphs[p],font=font(int(cell*.72),symbol=True),fill="#FFF9EB" if p.isupper() else "#111629",anchor="mm")
+
+def save(img, name):
+    img.save(SHOTS/name, optimize=True)
+
+# Store icon, also consumed directly by MAUI.
+icon = Image.new("RGB", (512,512), NAVY); d = ImageDraw.Draw(icon)
+d.ellipse((66,66,446,446), fill=BURGUNDY)
+d.text((256,255), "♞", font=font(330,symbol=True), fill=GOLD, anchor="mm")
+icon.save(GRAPHICS/"app_icon_512.png", optimize=True)
+icon.save(ROOT/"src"/"VelvetChess.App"/"Resources"/"AppIcon"/"appicon.png", optimize=True)
+
+# 01 — home.
+img = Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img)
+art=Image.open(GRAPHICS/"brand_key_art_source.png").convert("RGB").resize((W,W))
+img.paste(art.crop((0,80,W,760)),(0,0)); d=ImageDraw.Draw(img)
+text(d,(72,814),"ВАША ПАРТИЯ. ВАШ ТЕМП.",25,GOLD,True)
+for i,line in enumerate(wrap(d,"Красивые шахматы, которые всегда рядом",900,64,True)): text(d,(72,875+i*74),line,64,IVORY,True)
+text(d,(72,1060),"Играйте и тренируйтесь полностью офлайн",30,MUTED)
+button(d,1150,"Играть против компьютера"); button(d,1290,"50 тактических задач",BURGUNDY,"#FFFFFF")
+rounded(d,(72,1450,W-72,1690),28,SURFACE); text(d,(110,1500),"4 УРОВНЯ СЛОЖНОСТИ",24,GOLD,True)
+for i,line in enumerate(wrap(d,"От первых ходов до глубокого позиционного поиска",820,31)): text(d,(110,1550+i*42),line,31,MUTED)
+save(img,"01_home.png")
+
+# 02 — game.
+img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Локальная партия","Уровень: Любитель")
+rounded(d,(54,290,W-54,1318),32,SURFACE); board(d,78,314,924,"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 1 2")
+text(d,(W//2,1384),"Ваш ход",32,IVORY,True,"mm"); button(d,1450,"Новая партия")
+text(d,(W//2,1648),"Быстро • Честные правила • Без рекламы",25,MUTED,False,"mm")
+save(img,"02_local_game.png")
+
+# 03 — list.
+img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Тактическая коллекция","50 проверенных позиций")
+items=[("Мат в 1 · 1",923),("Вилка · 2",1204),("Отвлечение · 3",1421),("Эндшпиль · 4",1588),("Вскрытое нападение · 5",1712),("Завлечение · 6",1850)]
+for i,(label,rating) in enumerate(items):
+    y=300+i*230; rounded(d,(54,y,W-54,y+190),28,SURFACE); text(d,(94,y+50),label,38,IVORY,True); text(d,(94,y+112),f"Рейтинг {rating} · решите без подсказки",25,MUTED); text(d,(W-108,y+94),"›",54,GOLD,True,"mm")
+save(img,"03_puzzles.png")
+
+# 04 — puzzle.
+img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Вилка · 1","Найдите лучший ход")
+rounded(d,(54,290,W-54,1318),32,SURFACE); board(d,78,314,924,"2r1r1k1/p4q1p/bp4pP/3R1N2/P1n5/4N3/4QPP1/2R3K1 b - - 1 29")
+text(d,(72,1386),"Сложность: 1204",28,MUTED); button(d,1460,"Подсказка",RAISED,"#FFFFFF")
+text(d,(W//2,1660),"Шахи • Взятия • Угрозы",28,GOLD,True,"mm")
+save(img,"04_puzzle_play.png")
+
+print("Rendered icon and 4 screenshots")

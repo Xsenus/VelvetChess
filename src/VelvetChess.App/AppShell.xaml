@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell x:Class="VelvetChess.App.AppShell" xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" xmlns:local="clr-namespace:VelvetChess.App" Shell.BackgroundColor="#0B1020" Shell.ForegroundColor="#F3E9D6" Shell.TitleColor="#F3E9D6" Title="Шахматы Velvet">
+    <ShellContent Title="Главная" ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
+</Shell>
