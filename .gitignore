@@ -15,6 +15,6 @@ obj/
 artifacts/
 TestResults/
 work_puzzles.csv.zst
-work/top_puzzles.csv
+work/
 *.log
 .DS_Store

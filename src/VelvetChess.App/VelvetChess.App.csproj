@@ -49,15 +49,14 @@
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#0B1020" BaseSize="128,128" />
 
-		<!-- Images -->
-		<MauiImage Include="Resources\Images\*" />
-		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
+		<!-- Images used by the production UI -->
+		<MauiImage Include="Resources\Images\brand_key_art.png" />
 		
 		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
 
-		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
-		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<!-- Raw puzzle database -->
+		<MauiAsset Include="Resources\Raw\puzzles.json" LogicalName="puzzles.json" />
 	</ItemGroup>
 
 	<ItemGroup>

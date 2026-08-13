@@ -12,6 +12,12 @@
 
 Они подписаны стандартным сертификатом `Android Debug` и **не предназначены для загрузки в RuStore**. Для магазина выполните команду из `docs/RELEASE.md` со своим постоянным release keystore. Один и тот же release-ключ необходимо безопасно хранить для всех будущих обновлений.
 
+Для проверки этих конкретных QA-пакетов передайте preflight явный флаг `-AllowDebugCertificate`; без него debug-подпись считается ошибкой релиза.
+
+```powershell
+.\scripts\Test-RuStoreReadiness.ps1 -AllowOwnerPlaceholders -AllowDebugCertificate -PackagePath C:\path\VelvetChess-1.0.0-QA-debug-signed.apk
+```
+
 Проверенный Android manifest:
 
 - package: `ru.velvetchess.game`;

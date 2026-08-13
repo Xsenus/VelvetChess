@@ -17,16 +17,31 @@ dotnet build src/VelvetChess.App/VelvetChess.App.csproj -t:InstallAndroidDepende
 keytool -genkeypair -v -keystore velvet-release.keystore -alias velvet -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-## AAB
+## Автоматическая подписанная сборка
+
+1. Храните keystore и его резервную копию вне репозитория.
+2. Создайте вне репозитория два текстовых файла, содержащих только пароль keystore и пароль ключа. Ограничьте доступ к ним средствами ОС и удалите рабочие копии после выпуска.
+3. Заполните контакты вместо `TODO` в `store/rustore/listing-ru.md` и `store/rustore/privacy-policy.md`.
+4. Запустите:
 
 ```powershell
-dotnet publish src/VelvetChess.App/VelvetChess.App.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=aab -p:AndroidKeyStore=true -p:AndroidSigningKeyStore=C:\secure\velvet-release.keystore -p:AndroidSigningKeyAlias=velvet -p:AndroidSigningKeyPass=env:VELVET_KEY_PASS -p:AndroidSigningStorePass=env:VELVET_STORE_PASS
+.\scripts\Publish-AndroidRelease.ps1 `
+  -KeyStore C:\secure\velvet-release.keystore `
+  -KeyAlias velvet `
+  -StorePasswordFile C:\secure\velvet-store-pass.txt `
+  -KeyPasswordFile C:\secure\velvet-key-pass.txt
 ```
 
-Для одновременной QA-сборки APK и AAB в PowerShell используйте экранированный разделитель:
+Скрипт не принимает пароль как аргумент, запрещает секретные файлы внутри Git-репозитория, выполняет тесты и RuStore preflight, собирает APK/AAB, проверяет подписи и создаёт SHA-256 рядом с пакетами. Результат находится в `artifacts/release/android`.
+
+Отдельная проверка материалов и уже собранного пакета:
 
 ```powershell
-dotnet publish src/VelvetChess.App/VelvetChess.App.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk%3Baab
+.\scripts\Test-RuStoreReadiness.ps1 -PackagePath C:\path\VelvetChess-1.0.0-RuStore-signed.aab
 ```
 
-Секреты не записывайте в `.csproj`, shell history или Git. Перед загрузкой сохраните SHA-256 сертификата и проверьте подпись. Для AAB RuStore требует отдельно добавить подписи в Консоли.
+## Почему используются password-файлы
+
+Префикс `env:` для `AndroidSigningKeyPass` и `AndroidSigningStorePass` официально не поддерживается при формате AAB. Префикс `file:` не раскрывает пароль в командной строке и build log. См. [официальную документацию .NET MAUI](https://learn.microsoft.com/dotnet/maui/android/deployment/publish-cli).
+
+Секреты не записывайте в `.csproj`, shell history или Git. Перед загрузкой сохраните SHA-256 сертификата и пакета. Для AAB RuStore требует отдельно добавить подписи в Консоли.

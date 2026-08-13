@@ -22,6 +22,7 @@
 - `tests/VelvetChess.Core.Tests` — автоматические тесты.
 - `tools/PuzzleImporter` — воспроизводимый импорт задач.
 - `store/rustore` — карточка, политика, иконка, скриншоты и release checklist.
+- `scripts` — воспроизводимый RuStore preflight и безопасная подписанная Android-сборка.
 - `docs` — QA, релиз и онлайн-roadmap.
 
 ## Быстрый старт
@@ -34,7 +35,7 @@ dotnet test tests/VelvetChess.Core.Tests -c Release
 dotnet build src/VelvetChess.App/VelvetChess.App.csproj -f net9.0-android -c Debug
 ```
 
-Для iOS нужен Mac с Xcode и workload MAUI iOS. Инструкции release-подписи Android находятся в `docs/RELEASE.md`.
+Для iOS нужен Mac с Xcode и workload MAUI iOS. Инструкции и автоматизированная release-подпись Android находятся в `docs/RELEASE.md`.
 
 ## Важное перед публикацией
 
