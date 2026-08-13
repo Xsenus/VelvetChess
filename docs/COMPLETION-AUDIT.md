@@ -16,7 +16,7 @@
 | Производительность | `GraphicsView`, фоновый ИИ, alpha-beta, iterative deepening, bounded cache | Release linking/AOT Android пройдены |
 | Графика | Бренд-арт, адаптивная доска, собственная иконка, Noto chess font | Android assets успешно скомпилированы; лицензии сохранены |
 | RuStore | Карточка, policy, release notes, checklist, icon и 5 скриншотов | 1080×1920 PNG до 3 МБ; manifest/aapt проверка |
-| Git и релиз | `main`, CI, gitignore, безопасная воспроизводимая подпись | Preflight, проверка APK/AAB и GitHub Actions workflow |
+| Git и релиз | `main`, CI, gitignore, безопасная воспроизводимая подпись | Сквозной dry-run release-ключом, preflight APK/AAB и GitHub Actions workflow |
 | Будущий онлайн | Транспортный контракт и серверный roadmap | `IOnlineMatchService`, `docs/ONLINE-ROADMAP.md` |
 
 ## Требует владельца или внешнего устройства перед отправкой в магазин
