@@ -65,4 +65,22 @@ public sealed class BoardTests
             board.ApplyLegalMove(Move.ParseUci(uci));
         Assert.Equal(GameOutcome.DrawThreefoldRepetition, board.GetStatus().Outcome);
     }
+
+    [Fact]
+    public void InitialPositionPerftDepthThreeMatchesReference()
+    {
+        Assert.Equal(8902, Perft(new ChessBoard(), 3));
+    }
+
+    private static long Perft(ChessBoard board, int depth)
+    {
+        if (depth == 0) return 1;
+        long nodes = 0;
+        foreach (var move in board.GenerateLegalMoves())
+        {
+            var next = board.Clone(); next.ApplyLegalMove(move);
+            nodes += Perft(next, depth - 1);
+        }
+        return nodes;
+    }
 }

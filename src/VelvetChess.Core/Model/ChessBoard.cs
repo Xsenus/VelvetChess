@@ -131,13 +131,14 @@ public sealed class ChessBoard
 
     public GameStatus GetStatus()
     {
+        if (GenerateLegalMoves().Count == 0)
+            return IsInCheck(SideToMove)
+                ? new(GameOutcome.Checkmate, Opposite(SideToMove))
+                : new(GameOutcome.Stalemate);
         if (HalfmoveClock >= 100) return new(GameOutcome.DrawFiftyMove);
         if (_positionHistory.GetValueOrDefault(PositionKey()) >= 3) return new(GameOutcome.DrawThreefoldRepetition);
         if (IsInsufficientMaterial()) return new(GameOutcome.DrawInsufficientMaterial);
-        if (GenerateLegalMoves().Count > 0) return new(GameOutcome.Ongoing);
-        return IsInCheck(SideToMove)
-            ? new(GameOutcome.Checkmate, Opposite(SideToMove))
-            : new(GameOutcome.Stalemate);
+        return new(GameOutcome.Ongoing);
     }
 
     private IEnumerable<Move> GeneratePseudoLegalMoves()
@@ -238,16 +239,16 @@ public sealed class ChessBoard
         if (IsInCheck(color)) yield break;
         if (color == PieceColor.White && from == 4)
         {
-            if (WhiteCastleKing && _squares[5].IsNone && _squares[6].IsNone && !IsSquareAttacked(5, PieceColor.Black) && !IsSquareAttacked(6, PieceColor.Black))
+            if (WhiteCastleKing && _squares[7].Type == PieceType.Rook && _squares[7].Color == PieceColor.White && _squares[5].IsNone && _squares[6].IsNone && !IsSquareAttacked(5, PieceColor.Black) && !IsSquareAttacked(6, PieceColor.Black))
                 yield return new(4, 6, PieceType.None, MoveFlags.Castle);
-            if (WhiteCastleQueen && _squares[1].IsNone && _squares[2].IsNone && _squares[3].IsNone && !IsSquareAttacked(3, PieceColor.Black) && !IsSquareAttacked(2, PieceColor.Black))
+            if (WhiteCastleQueen && _squares[0].Type == PieceType.Rook && _squares[0].Color == PieceColor.White && _squares[1].IsNone && _squares[2].IsNone && _squares[3].IsNone && !IsSquareAttacked(3, PieceColor.Black) && !IsSquareAttacked(2, PieceColor.Black))
                 yield return new(4, 2, PieceType.None, MoveFlags.Castle);
         }
         else if (color == PieceColor.Black && from == 60)
         {
-            if (BlackCastleKing && _squares[61].IsNone && _squares[62].IsNone && !IsSquareAttacked(61, PieceColor.White) && !IsSquareAttacked(62, PieceColor.White))
+            if (BlackCastleKing && _squares[63].Type == PieceType.Rook && _squares[63].Color == PieceColor.Black && _squares[61].IsNone && _squares[62].IsNone && !IsSquareAttacked(61, PieceColor.White) && !IsSquareAttacked(62, PieceColor.White))
                 yield return new(60, 62, PieceType.None, MoveFlags.Castle);
-            if (BlackCastleQueen && _squares[57].IsNone && _squares[58].IsNone && _squares[59].IsNone && !IsSquareAttacked(59, PieceColor.White) && !IsSquareAttacked(58, PieceColor.White))
+            if (BlackCastleQueen && _squares[56].Type == PieceType.Rook && _squares[56].Color == PieceColor.Black && _squares[57].IsNone && _squares[58].IsNone && _squares[59].IsNone && !IsSquareAttacked(59, PieceColor.White) && !IsSquareAttacked(58, PieceColor.White))
                 yield return new(60, 58, PieceType.None, MoveFlags.Castle);
         }
     }
