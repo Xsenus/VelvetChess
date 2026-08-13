@@ -10,12 +10,12 @@
 | Основа для iPhone | MAUI iOS target, Info.plist и Apple Privacy Manifest | Исходники готовы; финальная сборка требует macOS/Xcode |
 | Локальные шахматы | Полный игровой экран против ИИ | Windows smoke-start; Android Release compile/link/package |
 | Несколько сложностей | 4 профиля с глубиной, временем и случайностью | Тест легальности и поиска мата ИИ |
-| Правила шахмат | Рокировка, en passant, promotion, шах/мат/пат и ничьи | 19 тестов, initial perft 8902, Kiwipete perft 2039 |
+| Правила шахмат | Рокировка, en passant, promotion, шах/мат/пат и ничьи | 23 теста, initial perft 8902, Kiwipete perft 2039 |
 | 50 задач и решения | Lichess CC0, подсказки и объяснения | Тест легальности каждой полной линии решения |
-| Сохранение | Партия, сложность, статистика и прогресс задач | `AppStateService`; iOS Privacy Manifest обновлён для Preferences |
+| Сохранение | Партия, сложность, настройки, статистика и прогресс задач | Независимый `UserStateStore`, тесты повреждённых данных; iOS Privacy Manifest обновлён |
 | Производительность | `GraphicsView`, фоновый ИИ, alpha-beta, iterative deepening, bounded cache | Release linking/AOT Android пройдены |
 | Графика | Бренд-арт, адаптивная доска, собственная иконка, Noto chess font | Android assets успешно скомпилированы; лицензии сохранены |
-| RuStore | Карточка, policy, release notes, checklist, icon и 4 скриншота | 1080×1920 PNG до 3 МБ; manifest/aapt проверка |
+| RuStore | Карточка, policy, release notes, checklist, icon и 5 скриншотов | 1080×1920 PNG до 3 МБ; manifest/aapt проверка |
 | Git | `main`, CI, gitignore, воспроизводимые инструкции | Чистая история коммитов и GitHub Actions workflow |
 | Будущий онлайн | Транспортный контракт и серверный roadmap | `IOnlineMatchService`, `docs/ONLINE-ROADMAP.md` |
 

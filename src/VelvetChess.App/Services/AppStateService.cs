@@ -1,86 +1,42 @@
-using System.Text.Json;
 using VelvetChess.Core.AI;
 using VelvetChess.Core.Game;
 using VelvetChess.Core.Model;
+using VelvetChess.Core.Persistence;
 
 namespace VelvetChess.App.Services;
 
 public sealed class AppStateService
 {
-    private const string SavedMovesKey = "game.moves.v1";
-    private const string DifficultyKey = "game.difficulty.v1";
-    private const string CompletedPuzzlesKey = "puzzles.completed.v1";
-    private const string PuzzleAttemptsKey = "puzzles.attempts.v1";
-    private const string GamesKey = "stats.games.v1";
-    private const string WinsKey = "stats.wins.v1";
-    private const string DrawsKey = "stats.draws.v1";
+    private readonly UserStateStore _state = new(new MauiPreferencesStore());
 
-    public Difficulty Difficulty
+    public Difficulty Difficulty { get => _state.Difficulty; set => _state.Difficulty = value; }
+    public bool ShowCoordinates { get => _state.ShowCoordinates; set => _state.ShowCoordinates = value; }
+    public bool HapticsEnabled { get => _state.HapticsEnabled; set => _state.HapticsEnabled = value; }
+    public bool ConfirmNewGame { get => _state.ConfirmNewGame; set => _state.ConfirmNewGame = value; }
+    public bool HasSavedGame => _state.HasSavedGame;
+    public int GamesPlayed => _state.GamesPlayed;
+    public int Wins => _state.Wins;
+    public int Draws => _state.Draws;
+    public int CompletedPuzzleCount => _state.CompletedPuzzles.Count;
+    public IReadOnlySet<string> CompletedPuzzles => _state.CompletedPuzzles;
+
+    public LocalGameSession LoadGame() => _state.LoadGame();
+    public void SaveGame(LocalGameSession session) => _state.SaveGame(session);
+    public void ClearGame() => _state.ClearGame();
+    public int GetPuzzleAttempts(string id) => _state.GetPuzzleAttempts(id);
+    public void RecordPuzzleAttempt(string id) => _state.RecordPuzzleAttempt(id);
+    public bool MarkPuzzleSolved(string id) => _state.MarkPuzzleSolved(id);
+    public void RecordFinishedGame(GameStatus status) => _state.RecordFinishedGame(status);
+    public void ResetProgress() => _state.ResetProgress();
+
+    private sealed class MauiPreferencesStore : IKeyValueStore
     {
-        get => (Difficulty)Math.Clamp(Preferences.Default.Get(DifficultyKey, (int)Difficulty.Casual), 0, 3);
-        set => Preferences.Default.Set(DifficultyKey, (int)value);
-    }
-
-    public bool HasSavedGame => !string.IsNullOrWhiteSpace(Preferences.Default.Get(SavedMovesKey, ""));
-    public int GamesPlayed => Preferences.Default.Get(GamesKey, 0);
-    public int Wins => Preferences.Default.Get(WinsKey, 0);
-    public int Draws => Preferences.Default.Get(DrawsKey, 0);
-    public int CompletedPuzzleCount => CompletedPuzzles.Count;
-
-    public LocalGameSession LoadGame()
-    {
-        try { return LocalGameSession.Restore(Preferences.Default.Get(SavedMovesKey, "")); }
-        catch (FormatException) { ClearGame(); return new LocalGameSession(); }
-    }
-
-    public void SaveGame(LocalGameSession session)
-    {
-        var moves = session.SerializeMoves();
-        if (string.IsNullOrEmpty(moves)) ClearGame(); else Preferences.Default.Set(SavedMovesKey, moves);
-    }
-
-    public void ClearGame() => Preferences.Default.Remove(SavedMovesKey);
-
-    public IReadOnlySet<string> CompletedPuzzles => ReadSet(CompletedPuzzlesKey);
-
-    public int GetPuzzleAttempts(string id)
-    {
-        var attempts = ReadDictionary(PuzzleAttemptsKey);
-        return attempts.GetValueOrDefault(id);
-    }
-
-    public void RecordPuzzleAttempt(string id)
-    {
-        var attempts = ReadDictionary(PuzzleAttemptsKey);
-        attempts[id] = attempts.GetValueOrDefault(id) + 1;
-        Preferences.Default.Set(PuzzleAttemptsKey, JsonSerializer.Serialize(attempts));
-    }
-
-    public bool MarkPuzzleSolved(string id)
-    {
-        var completed = ReadSet(CompletedPuzzlesKey);
-        if (!completed.Add(id)) return false;
-        Preferences.Default.Set(CompletedPuzzlesKey, JsonSerializer.Serialize(completed));
-        return true;
-    }
-
-    public void RecordFinishedGame(GameStatus status)
-    {
-        Preferences.Default.Set(GamesKey, GamesPlayed + 1);
-        if (status.Winner == PieceColor.White) Preferences.Default.Set(WinsKey, Wins + 1);
-        else if (status.Winner is null) Preferences.Default.Set(DrawsKey, Draws + 1);
-        ClearGame();
-    }
-
-    private static HashSet<string> ReadSet(string key)
-    {
-        try { return JsonSerializer.Deserialize<HashSet<string>>(Preferences.Default.Get(key, "[]")) ?? []; }
-        catch (JsonException) { return []; }
-    }
-
-    private static Dictionary<string, int> ReadDictionary(string key)
-    {
-        try { return JsonSerializer.Deserialize<Dictionary<string, int>>(Preferences.Default.Get(key, "{}")) ?? []; }
-        catch (JsonException) { return []; }
+        public string GetString(string key, string defaultValue = "") => Preferences.Default.Get(key, defaultValue);
+        public int GetInt(string key, int defaultValue = 0) => Preferences.Default.Get(key, defaultValue);
+        public bool GetBool(string key, bool defaultValue) => Preferences.Default.Get(key, defaultValue);
+        public void SetString(string key, string value) => Preferences.Default.Set(key, value);
+        public void SetInt(string key, int value) => Preferences.Default.Set(key, value);
+        public void SetBool(string key, bool value) => Preferences.Default.Set(key, value);
+        public void Remove(string key) => Preferences.Default.Remove(key);
     }
 }

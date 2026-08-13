@@ -105,4 +105,18 @@ text(d,(72,1386),"Сложность: 1204",28,MUTED); button(d,1460,"Подск
 text(d,(W//2,1660),"Шахи • Взятия • Угрозы",28,GOLD,True,"mm")
 save(img,"04_puzzle_play.png")
 
-print("Rendered icon and 4 screenshots")
+# 05 — settings and privacy.
+img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Настройки","Комфортная игра без лишнего")
+settings=[("Координаты доски","Буквы и цифры у полей",True),("Тактильный отклик","Короткий отклик после хода",True),("Подтверждать новую партию","Защита текущей позиции",True)]
+for i,(label,desc,on) in enumerate(settings):
+    y=310+i*220; rounded(d,(54,y,W-54,y+180),28,SURFACE); text(d,(94,y+44),label,34,IVORY,True); text(d,(94,y+103),desc,24,MUTED)
+    rounded(d,(W-220,y+57,W-94,y+123),33,GOLD if on else RAISED); d.ellipse((W-157,y+65,W-101,y+121),fill="#FFFFFF")
+text(d,(72,1010),"ВАШИ ДАННЫЕ",24,GOLD,True)
+rounded(d,(54,1060,W-54,1365),28,SURFACE)
+privacy="Игра работает офлайн. Персональные данные, реклама и аналитические идентификаторы не собираются. Партии и прогресс хранятся только на устройстве."
+for i,line in enumerate(wrap(d,privacy,850,29)): text(d,(94,1110+i*43),line,29,MUTED)
+button(d,1435,"Сбросить прогресс",BURGUNDY,"#FFFFFF")
+text(d,(W//2,1650),"Шахматы Velvet · версия 1.0.0",24,MUTED,False,"mm")
+save(img,"05_settings_privacy.png")
+
+print("Rendered icon and 5 screenshots")

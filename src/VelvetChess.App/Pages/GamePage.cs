@@ -25,7 +25,7 @@ public sealed class GamePage : ContentPage
         foreach (var level in Enum.GetValues<Difficulty>()) _difficulty.Items.Add(DifficultyProfile.For(level).DisplayName);
         _difficulty.SelectedIndex = (int)state.Difficulty;
         _difficulty.SelectedIndexChanged += (_, _) => { if (_difficulty.SelectedIndex >= 0) _state.Difficulty = (Difficulty)_difficulty.SelectedIndex; };
-        _boardView.SetBoard(_session.Board); _boardView.MoveRequested += OnMoveRequested;
+        _boardView.ShowCoordinates = state.ShowCoordinates; _boardView.SetBoard(_session.Board); _boardView.MoveRequested += OnMoveRequested;
         var restart = new Button { Text = "Новая партия", HeightRequest = 48, FontSize = 13 };
         restart.Clicked += async (_, _) => await ConfirmNewGameAsync();
         _undo.Clicked += (_, _) => UndoTurn();
@@ -45,6 +45,7 @@ public sealed class GamePage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        _boardView.ShowCoordinates = _state.ShowCoordinates;
         if (_session.Board.SideToMove == PieceColor.Black && !_session.Board.GetStatus().IsFinished) _ = RunAiAsync();
     }
 
@@ -64,6 +65,7 @@ public sealed class GamePage : ContentPage
             move = move with { Promotion = promotion };
         }
         if (!_session.TryMove(move, out _)) return;
+        HapticFeedbackIfEnabled();
         _state.SaveGame(_session); Refresh();
         if (_session.Board.GetStatus().IsFinished) { FinishGame(); return; }
         await RunAiAsync();
@@ -77,7 +79,11 @@ public sealed class GamePage : ContentPage
         try
         {
             var reply = await _ai.FindMoveAsync(_session.Board.Clone(), _state.Difficulty, cancellation.Token);
-            if (reply.HasValue && !cancellation.IsCancellationRequested) _session.TryMove(reply.Value, out _);
+            if (reply.HasValue && !cancellation.IsCancellationRequested)
+            {
+                _session.TryMove(reply.Value, out _);
+                HapticFeedbackIfEnabled();
+            }
             _state.SaveGame(_session);
         }
         catch (OperationCanceledException) { }
@@ -91,7 +97,7 @@ public sealed class GamePage : ContentPage
 
     private async Task ConfirmNewGameAsync()
     {
-        if (_session.History.Count > 0 && !_session.Board.GetStatus().IsFinished &&
+        if (_state.ConfirmNewGame && _session.History.Count > 0 && !_session.Board.GetStatus().IsFinished &&
             !await DisplayAlert("Новая партия", "Текущая партия будет заменена. Начать заново?", "Начать", "Отмена")) return;
         _thinking?.Cancel(); _session.NewGame(); _outcomeRecorded = false; _state.ClearGame(); _boardView.InputEnabled = true; Refresh();
     }
@@ -128,5 +134,11 @@ public sealed class GamePage : ContentPage
     {
         if (_session.History.Count == 0) return "История ходов появится здесь";
         return string.Join("   ", _session.History.TakeLast(8).Select(move => move.Color == PieceColor.White ? $"{move.MoveNumber}. {move.San}" : move.San));
+    }
+
+    private void HapticFeedbackIfEnabled()
+    {
+        if (!_state.HapticsEnabled || !HapticFeedback.Default.IsSupported) return;
+        try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch (FeatureNotSupportedException) { }
     }
 }

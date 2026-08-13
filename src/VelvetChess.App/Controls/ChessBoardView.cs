@@ -11,6 +11,7 @@ public sealed class ChessBoardView : GraphicsView
 
     public ChessBoard Board { get; private set; } = new();
     public bool Flipped { get => _drawable.Flipped; set { _drawable.Flipped = value; Invalidate(); } }
+    public bool ShowCoordinates { get => _drawable.ShowCoordinates; set { _drawable.ShowCoordinates = value; Invalidate(); } }
     public bool InputEnabled { get; set; } = true;
     public event EventHandler<Move>? MoveRequested;
 
@@ -19,6 +20,7 @@ public sealed class ChessBoardView : GraphicsView
         HeightRequest = 420;
         _drawable = new BoardDrawable(() => Board, () => _selected, () => _moves);
         Drawable = _drawable;
+        SemanticProperties.SetDescription(this, "Интерактивная шахматная доска. Коснитесь фигуры, затем поля назначения.");
         StartInteraction += OnTap;
     }
 
@@ -48,6 +50,7 @@ public sealed class ChessBoardView : GraphicsView
     private sealed class BoardDrawable(Func<ChessBoard> board, Func<int> selected, Func<IReadOnlyList<Move>> moves) : IDrawable
     {
         public bool Flipped { get; set; }
+        public bool ShowCoordinates { get; set; } = true;
         private static readonly Color Light = Color.FromArgb("#E6D4B7");
         private static readonly Color Dark = Color.FromArgb("#6E4051");
 
@@ -74,6 +77,16 @@ public sealed class ChessBoardView : GraphicsView
                     canvas.FontColor = piece.Color == PieceColor.White ? Color.FromArgb("#FFF9EB") : Color.FromArgb("#111629");
                     canvas.FontSize = cell * .76f; canvas.Font = new Microsoft.Maui.Graphics.Font("ChessPieces");
                     canvas.DrawString(Symbol(piece), rect, HorizontalAlignment.Center, VerticalAlignment.Center);
+                }
+                if (ShowCoordinates)
+                {
+                    canvas.Font = new Microsoft.Maui.Graphics.Font("OpenSansSemibold");
+                    canvas.FontSize = cell * .14f;
+                    canvas.FontColor = (file + rank) % 2 == 0 ? Light : Dark;
+                    if (shownFile == 0)
+                        canvas.DrawString((rank + 1).ToString(), rect.X + 3, rect.Y + 1, cell - 5, cell, HorizontalAlignment.Left, VerticalAlignment.Top);
+                    if (shownRank == 7)
+                        canvas.DrawString(((char)('a' + file)).ToString(), rect.X + 2, rect.Y, cell - 5, cell - 2, HorizontalAlignment.Right, VerticalAlignment.Bottom);
                 }
             }
         }

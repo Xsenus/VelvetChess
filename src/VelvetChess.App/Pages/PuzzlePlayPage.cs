@@ -19,6 +19,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
     public PuzzlePlayPage(PuzzleRepository repository, AppStateService state)
     {
         _repository = repository; _state = state; Title = "Решение задачи";
+        _board.ShowCoordinates = state.ShowCoordinates;
         _board.MoveRequested += OnMove;
         _hint.Clicked += async (_, _) => { if (_session is not null) await DisplayAlert("Подсказка", _session.Puzzle.Hint, "Понятно"); };
         _next.Clicked += async (_, _) => await OpenNextAsync();
@@ -43,13 +44,14 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
         if (puzzle is null) { _message.Text = "Задача не найдена."; return; }
         _session = new PuzzleSession(puzzle); _title.Text = puzzle.Title;
         _message.Text = $"Сложность: {puzzle.Rating} · {puzzle.Theme}"; _next.IsVisible = false; _hint.IsVisible = true;
-        _board.InputEnabled = true; _board.Flipped = puzzle.SideToMove == PieceColor.Black; _board.SetBoard(_session.Board);
+        _board.InputEnabled = true; _board.ShowCoordinates = _state.ShowCoordinates; _board.Flipped = puzzle.SideToMove == PieceColor.Black; _board.SetBoard(_session.Board);
     }
 
     private async void OnMove(object? sender, Move move)
     {
         if (_session is null) return;
         var result = _session.TryMove(move.Uci); _board.SetBoard(_session.Board);
+        HapticFeedbackIfEnabled(result == PuzzleMoveResult.Wrong ? HapticFeedbackType.LongPress : HapticFeedbackType.Click);
         if (result == PuzzleMoveResult.Wrong)
         {
             _state.RecordPuzzleAttempt(_session.Puzzle.Id);
@@ -70,5 +72,11 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
         var puzzles = await _repository.GetAllAsync(); var current = puzzles.ToList().FindIndex(puzzle => puzzle.Id == _session.Puzzle.Id);
         var next = puzzles[(current + 1 + puzzles.Count) % puzzles.Count];
         await LoadAsync(next.Id);
+    }
+
+    private void HapticFeedbackIfEnabled(HapticFeedbackType type)
+    {
+        if (!_state.HapticsEnabled || !HapticFeedback.Default.IsSupported) return;
+        try { HapticFeedback.Default.Perform(type); } catch (FeatureNotSupportedException) { }
     }
 }
