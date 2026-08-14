@@ -76,7 +76,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $repo $ownerInfoPath), $ownerInfo, $utf8)
 
     & (Join-Path $PSScriptRoot 'Test-RuStoreReadiness.ps1') -SkipTests
-    if ($LASTEXITCODE -ne 0) { throw 'Owner data was written, but RuStore preflight failed.' }
+    if (-not $?) { throw 'Owner data was written, but RuStore preflight failed.' }
     Write-Host 'Owner data and privacy site updated successfully.' -ForegroundColor Green
 } finally {
     Pop-Location
