@@ -91,8 +91,9 @@ try {
         Add-Failure "Unexpected project identity: '$appId' '$versionName' ('$versionCode')."
     }
 
-    $ownerFiles = @('store\rustore\listing-ru.md', 'store\rustore\privacy-policy.md', 'store\rustore\privacy-site\index.html', 'src\VelvetChess.App\ReleaseOwnerInfo.cs')
-    $placeholderHits = Select-String -Path $ownerFiles -Pattern 'TODO|example\.com' -CaseSensitive:$false
+    $ownerContentFiles = @('store\rustore\listing-ru.md', 'store\rustore\privacy-policy.md', 'store\rustore\privacy-site\index.html')
+    $placeholderHits = @(Select-String -Path $ownerContentFiles -Pattern 'TODO|example\.com' -CaseSensitive:$false)
+    $placeholderHits += @(Select-String -Path 'src\VelvetChess.App\ReleaseOwnerInfo.cs' -Pattern '^\s*public const string \w+\s*=\s*"[^"]*(?:TODO|example\.com)' -CaseSensitive:$false)
     if ($placeholderHits) {
         if ($AllowOwnerPlaceholders) {
             Write-Host '[WARN] Owner contacts still contain placeholders.' -ForegroundColor Yellow
