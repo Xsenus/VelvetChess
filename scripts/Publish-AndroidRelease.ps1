@@ -91,6 +91,13 @@ try {
     $certificateFile = Join-Path $resolvedOutput "VelvetChess-$version-signing-certificate.sha256"
     [IO.File]::WriteAllText($certificateFile, "$certificateHash`n")
     Write-Host "Signing certificate SHA-256: $certificateHash" -ForegroundColor Green
+
+    $keytool = Get-Command keytool -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    if (-not $keytool) { throw 'keytool was not found; the RuStore upload certificate cannot be exported.' }
+    $uploadCertificate = Join-Path $resolvedOutput "VelvetChess-$version-upload-certificate.pem"
+    & $keytool -exportcert -rfc -alias $KeyAlias -keystore $resolvedKeyStore -storepass:file $resolvedStorePassword -file $uploadCertificate
+    if ($LASTEXITCODE -ne 0) { throw 'RuStore upload certificate export failed.' }
+    Write-Host "Created: $uploadCertificate" -ForegroundColor Green
 } finally {
     Pop-Location
 }
