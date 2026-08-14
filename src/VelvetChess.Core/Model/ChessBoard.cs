@@ -96,7 +96,7 @@ public sealed class ChessBoard
         foreach (var move in GeneratePseudoLegalMoves())
         {
             var next = Clone();
-            next.ApplyUnchecked(move);
+            next.ApplyUnchecked(move, recordPosition: false);
             if (!next.IsInCheck(SideToMove)) moves.Add(move);
         }
         return moves;
@@ -106,8 +106,7 @@ public sealed class ChessBoard
     {
         foreach (var move in GenerateLegalMoves())
         {
-            if (move.From == requested.From && move.To == requested.To &&
-                (requested.Promotion == PieceType.None || requested.Promotion == move.Promotion))
+            if (move.From == requested.From && move.To == requested.To && requested.Promotion == move.Promotion)
             {
                 applied = move;
                 ApplyUnchecked(move);
@@ -129,9 +128,11 @@ public sealed class ChessBoard
         return king >= 0 && IsSquareAttacked(king, Opposite(color));
     }
 
-    public GameStatus GetStatus()
+    public GameStatus GetStatus() => GetStatus(GenerateLegalMoves());
+
+    internal GameStatus GetStatus(IReadOnlyList<Move> legalMoves)
     {
-        if (GenerateLegalMoves().Count == 0)
+        if (legalMoves.Count == 0)
             return IsInCheck(SideToMove)
                 ? new(GameOutcome.Checkmate, Opposite(SideToMove))
                 : new(GameOutcome.Stalemate);
@@ -296,7 +297,7 @@ public sealed class ChessBoard
         return false;
     }
 
-    private void ApplyUnchecked(Move move)
+    private void ApplyUnchecked(Move move, bool recordPosition = true)
     {
         var piece = _squares[move.From];
         var captured = _squares[move.To];
@@ -314,7 +315,7 @@ public sealed class ChessBoard
         HalfmoveClock = piece.Type == PieceType.Pawn || !captured.IsNone || move.Flags.HasFlag(MoveFlags.EnPassant) ? 0 : HalfmoveClock + 1;
         if (SideToMove == PieceColor.Black) FullmoveNumber++;
         SideToMove = Opposite(SideToMove);
-        RecordPosition();
+        if (recordPosition) RecordPosition();
     }
 
     private void UpdateCastleRights(Move move, Piece piece, Piece captured)
@@ -347,7 +348,32 @@ public sealed class ChessBoard
     private string PositionKey()
     {
         var fields = ToFen().Split(' ');
+        if (!HasLegalEnPassantCapture()) fields[3] = "-";
         return string.Join(' ', fields.Take(4));
+    }
+
+    private bool HasLegalEnPassantCapture()
+    {
+        if (EnPassantSquare < 0 || !_squares[EnPassantSquare].IsNone) return false;
+        var targetFile = EnPassantSquare % 8;
+        var targetRank = EnPassantSquare / 8;
+        var sourceRank = targetRank + (SideToMove == PieceColor.White ? -1 : 1);
+        var capturedSquare = EnPassantSquare + (SideToMove == PieceColor.White ? -8 : 8);
+        if (!ChessSquare.IsValid(targetFile, sourceRank) || capturedSquare is < 0 or >= 64) return false;
+        var captured = _squares[capturedSquare];
+        if (captured.Type != PieceType.Pawn || captured.Color == SideToMove) return false;
+
+        foreach (var sourceFile in new[] { targetFile - 1, targetFile + 1 })
+        {
+            if (!ChessSquare.IsValid(sourceFile, sourceRank)) continue;
+            var from = sourceRank * 8 + sourceFile;
+            var pawn = _squares[from];
+            if (pawn.Type != PieceType.Pawn || pawn.Color != SideToMove) continue;
+            var next = Clone();
+            next.ApplyUnchecked(new Move(from, EnPassantSquare, PieceType.None, MoveFlags.Capture | MoveFlags.EnPassant), recordPosition: false);
+            if (!next.IsInCheck(SideToMove)) return true;
+        }
+        return false;
     }
 
     private void RecordPosition()

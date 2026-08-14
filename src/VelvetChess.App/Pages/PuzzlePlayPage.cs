@@ -12,8 +12,9 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
     private readonly ChessBoardView _board = new();
     private readonly Label _title = new() { FontSize = 22, FontFamily = "OpenSansSemibold" };
     private readonly Label _message = new() { FontSize = 14, TextColor = Color.FromArgb("#9DA7BE") };
-    private readonly Button _hint = new() { Text = "Подсказка", HeightRequest = 46, BackgroundColor = Color.FromArgb("#202841"), TextColor = Colors.White };
-    private readonly Button _next = new() { Text = "Следующая задача", HeightRequest = 46, IsVisible = false };
+    private readonly Button _hint = new() { Text = "Подсказка", HeightRequest = 46, Margin = 4, BackgroundColor = Color.FromArgb("#202841"), TextColor = Colors.White };
+    private readonly Button _solution = new() { Text = "Показать решение", HeightRequest = 46, Margin = 4, BackgroundColor = Color.FromArgb("#202841"), TextColor = Colors.White };
+    private readonly Button _next = new() { Text = "Следующая задача", HeightRequest = 46, Margin = 4, IsVisible = false };
     private PuzzleSession? _session;
 
     public PuzzlePlayPage(PuzzleRepository repository, AppStateService state)
@@ -22,6 +23,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
         _board.ShowCoordinates = state.ShowCoordinates;
         _board.MoveRequested += OnMove;
         _hint.Clicked += async (_, _) => { if (_session is not null) await DisplayAlert("Подсказка", _session.Puzzle.Hint, "Понятно"); };
+        _solution.Clicked += async (_, _) => await RevealSolutionAsync();
         _next.Clicked += async (_, _) => await OpenNextAsync();
         Content = new ScrollView { Content = new VerticalStackLayout { Padding = 16, Spacing = 14, Children =
         {
@@ -29,7 +31,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
             new Label { Text = "Найдите лучший ход", TextColor = Color.FromArgb("#D6AE68"), CharacterSpacing = 1.4, FontSize = 12 },
             new Border { StrokeThickness = 0, StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 18 }, Content = _board },
             _message,
-            new HorizontalStackLayout { Spacing = 10, HorizontalOptions = LayoutOptions.Center, Children = { _hint, _next } }
+            new FlexLayout { Direction = Microsoft.Maui.Layouts.FlexDirection.Row, Wrap = Microsoft.Maui.Layouts.FlexWrap.Wrap, JustifyContent = Microsoft.Maui.Layouts.FlexJustify.Center, AlignItems = Microsoft.Maui.Layouts.FlexAlignItems.Center, Children = { _hint, _solution, _next } }
         }}};
     }
 
@@ -43,7 +45,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
         var puzzle = await _repository.GetAsync(id);
         if (puzzle is null) { _message.Text = "Задача не найдена."; return; }
         _session = new PuzzleSession(puzzle); _title.Text = puzzle.Title;
-        _message.Text = $"Сложность: {puzzle.Rating} · {puzzle.Theme}"; _next.IsVisible = false; _hint.IsVisible = true;
+        _message.Text = $"Сложность: {puzzle.Rating} · {puzzle.Theme}"; _next.IsVisible = false; _hint.IsVisible = true; _solution.IsVisible = true;
         _board.InputEnabled = true; _board.ShowCoordinates = _state.ShowCoordinates; _board.Flipped = puzzle.SideToMove == PieceColor.Black; _board.SetBoard(_session.Board);
     }
 
@@ -60,10 +62,19 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
         else if (result == PuzzleMoveResult.Complete)
         {
             _board.InputEnabled = false; _state.MarkPuzzleSolved(_session.Puzzle.Id);
-            _message.Text = _session.Puzzle.Explanation; _next.IsVisible = true; _hint.IsVisible = false;
+            _message.Text = $"{_session.Puzzle.Explanation}\n\nРешение: {_session.SolutionText}"; _next.IsVisible = true; _hint.IsVisible = false; _solution.IsVisible = false;
             await DisplayAlert("Верно!", "Задача решена. Отличная точность.", "Продолжить");
         }
         else _message.Text = "Точно! Продолжайте вариант.";
+    }
+
+    private async Task RevealSolutionAsync()
+    {
+        if (_session is null || !await DisplayAlert("Показать решение?", "Ответ будет открыт, но задача не будет отмечена как решённая.", "Показать", "Отмена")) return;
+        _state.RecordPuzzleAttempt(_session.Puzzle.Id);
+        _session.RevealSolution(); _board.SetBoard(_session.Board); _board.InputEnabled = false;
+        _message.Text = $"{_session.Puzzle.Explanation}\n\nРешение: {_session.SolutionText}";
+        _hint.IsVisible = false; _solution.IsVisible = false; _next.IsVisible = true;
     }
 
     private async Task OpenNextAsync()

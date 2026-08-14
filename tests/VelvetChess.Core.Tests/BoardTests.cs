@@ -78,16 +78,61 @@ public sealed class BoardTests
     }
 
     [Fact]
-    public void InitialPositionPerftDepthThreeMatchesReference()
+    public void UnusableEnPassantTargetDoesNotPreventThreefoldRepetition()
     {
-        Assert.Equal(8902, Perft(new ChessBoard(), 3));
+        var board = new ChessBoard();
+        foreach (var uci in new[] { "a2a4", "g8f6", "g1f3", "f6g8", "f3g1", "g8f6", "g1f3", "f6g8", "f3g1" })
+            board.ApplyLegalMove(Move.ParseUci(uci));
+        Assert.Equal(GameOutcome.DrawThreefoldRepetition, board.GetStatus().Outcome);
     }
 
     [Fact]
-    public void KiwipetePerftDepthTwoMatchesReference()
+    public void PinnedEnPassantPawnDoesNotChangeRepetitionIdentity()
+    {
+        var board = new ChessBoard("3k2n1/8/8/8/3p4/8/4P3/K2R2N1 w - - 0 1");
+        foreach (var uci in new[] { "e2e4", "g8f6", "g1f3", "f6g8", "f3g1", "g8f6", "g1f3", "f6g8", "f3g1" })
+            board.ApplyLegalMove(Move.ParseUci(uci));
+        Assert.Equal(GameOutcome.DrawThreefoldRepetition, board.GetStatus().Outcome);
+    }
+
+    [Fact]
+    public void LegalEnPassantRightKeepsPositionsDistinctForRepetition()
+    {
+        var board = new ChessBoard("6nk/8/8/8/3p4/8/4P3/K5N1 w - - 0 1");
+        foreach (var uci in new[] { "e2e4", "g8f6", "g1f3", "f6g8", "f3g1", "g8f6", "g1f3", "f6g8", "f3g1" })
+            board.ApplyLegalMove(Move.ParseUci(uci));
+        Assert.Equal(GameOutcome.Ongoing, board.GetStatus().Outcome);
+
+        foreach (var uci in new[] { "g8f6", "g1f3", "f6g8", "f3g1" })
+            board.ApplyLegalMove(Move.ParseUci(uci));
+        Assert.Equal(GameOutcome.DrawThreefoldRepetition, board.GetStatus().Outcome);
+    }
+
+    [Fact]
+    public void AiDoesNotMoveAfterADeclaredDraw()
+    {
+        var board = new ChessBoard("7k/8/8/8/8/8/6K1/8 w - - 100 51");
+        Assert.Null(new ChessAi(42).FindMove(board, DifficultyProfile.For(Difficulty.Expert)));
+    }
+
+    [Fact]
+    public void InitialPositionPerftDepthFourMatchesReference()
+    {
+        Assert.Equal(197281, Perft(new ChessBoard(), 4));
+    }
+
+    [Fact]
+    public void KiwipetePerftDepthThreeMatchesReference()
     {
         var board = new ChessBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-        Assert.Equal(2039, Perft(board, 2));
+        Assert.Equal(97862, Perft(board, 3));
+    }
+
+    [Fact]
+    public void EnPassantPerftPositionMatchesReference()
+    {
+        var board = new ChessBoard("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1");
+        Assert.Equal(2812, Perft(board, 3));
     }
 
     [Fact]
@@ -158,5 +203,15 @@ public sealed class BoardTests
         Assert.Equal("O-O", ChessNotation.ToSan(castle, Move.ParseUci("e1g1")));
         var promotion = new ChessBoard("7k/P7/8/8/8/8/8/7K w - - 0 1");
         Assert.Equal("a8=Q+", ChessNotation.ToSan(promotion, Move.ParseUci("a7a8q")));
+    }
+
+    [Fact]
+    public void PromotionPieceMustBeExplicit()
+    {
+        var board = new ChessBoard("7k/P7/8/8/8/8/8/7K w - - 0 1");
+        Assert.False(board.TryMove(Move.ParseUci("a7a8"), out _));
+        Assert.Throws<InvalidOperationException>(() => ChessNotation.ToSan(board, Move.ParseUci("a7a8")));
+        Assert.True(board.TryMove(Move.ParseUci("a7a8n"), out _));
+        Assert.Equal(PieceType.Knight, board[ChessSquare.FromName("a8")].Type);
     }
 }

@@ -15,7 +15,7 @@ public sealed class LocalGameSession
     {
         var color = Board.SideToMove; var number = Board.FullmoveNumber;
         var legal = Board.GenerateLegalMoves().FirstOrDefault(candidate => candidate.From == move.From && candidate.To == move.To &&
-            (move.Promotion == PieceType.None || candidate.Promotion == move.Promotion));
+            move.Promotion == candidate.Promotion);
         if (legal == default) { played = default!; return false; }
         var san = ChessNotation.ToSan(Board, legal);
         Board.ApplyLegalMove(legal);

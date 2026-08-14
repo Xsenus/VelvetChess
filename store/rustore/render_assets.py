@@ -101,7 +101,9 @@ save(img,"03_puzzles.png")
 # 04 — puzzle.
 img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Вилка · 1","Найдите лучший ход")
 rounded(d,(54,290,W-54,1318),32,SURFACE); board(d,78,314,924,"2r1r1k1/p4q1p/bp4pP/3R1N2/P1n5/4N3/4QPP1/2R3K1 b - - 1 29")
-text(d,(72,1386),"Сложность: 1204",28,MUTED); button(d,1460,"Подсказка",RAISED,"#FFFFFF")
+text(d,(72,1386),"Сложность: 1204",28,MUTED)
+rounded(d,(72,1460,476,1572),34,RAISED); text(d,(274,1516),"Подсказка",28,"#FFFFFF",True,"mm")
+rounded(d,(500,1460,W-72,1572),34,RAISED); text(d,(754,1516),"Показать решение",25,"#FFFFFF",True,"mm")
 text(d,(W//2,1660),"Шахи • Взятия • Угрозы",28,GOLD,True,"mm")
 save(img,"04_puzzle_play.png")
 
@@ -119,4 +121,12 @@ button(d,1435,"Сбросить прогресс",BURGUNDY,"#FFFFFF")
 text(d,(W//2,1650),"Шахматы Velvet · версия 1.0.0",24,MUTED,False,"mm")
 save(img,"05_settings_privacy.png")
 
-print("Rendered icon and 5 screenshots")
+# 06 — solved puzzle with the complete line.
+img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Задача решена","Точная линия найдена")
+rounded(d,(54,290,W-54,1318),32,SURFACE); board(d,78,314,924,"2r1r3/p4k1p/bp4pP/3N4/P1n5/4N3/4QPP1/2R3K1 b - - 0 30")
+text(d,(72,1365),"РЕШЕНИЕ",24,GOLD,True); text(d,(72,1415),"29. Nf6+  Kf7  30. Nxd5",32,IVORY,True)
+for i,line in enumerate(wrap(d,"Вилка: конь атакует короля и ферзя, выигрывая материал.",880,26)): text(d,(72,1470+i*40),line,26,MUTED)
+button(d,1640,"Следующая задача",GOLD,"#101522")
+save(img,"06_puzzle_solution.png")
+
+print("Rendered icon and 6 screenshots")

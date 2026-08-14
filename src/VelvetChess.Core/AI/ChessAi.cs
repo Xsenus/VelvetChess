@@ -15,7 +15,7 @@ public sealed class ChessAi(int? randomSeed = null)
     public Move? FindMove(ChessBoard board, DifficultyProfile profile, CancellationToken cancellationToken = default)
     {
         var legal = board.GenerateLegalMoves();
-        if (legal.Count == 0) return null;
+        if (board.GetStatus(legal).IsFinished) return null;
         if (legal.Count == 1) return legal[0];
 
         _table.Clear();
@@ -53,7 +53,8 @@ public sealed class ChessAi(int? randomSeed = null)
     private int Negamax(ChessBoard board, int depth, int alpha, int beta, Stopwatch watch, int deadline, CancellationToken token, int ply)
     {
         token.ThrowIfCancellationRequested();
-        var status = board.GetStatus();
+        var legal = board.GenerateLegalMoves();
+        var status = board.GetStatus(legal);
         if (status.Outcome == GameOutcome.Checkmate) return -MateScore + ply;
         if (status.IsFinished) return 0;
         if (depth <= 0 || watch.ElapsedMilliseconds >= deadline) return EvaluateForSide(board);
@@ -62,7 +63,7 @@ public sealed class ChessAi(int? randomSeed = null)
         if (_table.TryGetValue(key, out var cached) && cached.depth >= depth) return cached.score;
         var best = -MateScore;
         var fullySearched = true;
-        foreach (var move in OrderMoves(board, board.GenerateLegalMoves()))
+        foreach (var move in OrderMoves(board, legal))
         {
             var next = board.Clone(); next.ApplyLegalMove(move);
             var score = -Negamax(next, depth - 1, -beta, -alpha, watch, deadline, token, ply + 1);

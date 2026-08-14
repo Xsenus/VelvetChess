@@ -9,7 +9,7 @@ public static class ChessNotation
     {
         var legal = board.GenerateLegalMoves();
         var actual = legal.FirstOrDefault(candidate => candidate.From == move.From && candidate.To == move.To &&
-            (move.Promotion == PieceType.None || candidate.Promotion == move.Promotion));
+            move.Promotion == candidate.Promotion);
         if (actual == default) throw new InvalidOperationException($"Illegal move: {move.Uci}");
 
         var piece = board[actual.From];
