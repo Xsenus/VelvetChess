@@ -74,7 +74,7 @@ function Test-ManifestPermissions([string]$ManifestText, [string]$ApplicationId)
     if ($unexpected.Count) {
         Add-Failure "Unexpected Android permission(s): $($unexpected -join ', ')."
     } else {
-        Add-Pass 'No sensitive Android permissions are declared (VIBRATE and INTERNET are allowed for optional haptics/account sync).'
+        Add-Pass 'No sensitive Android permissions are declared (VIBRATE is used for haptics; dormant future account infrastructure declares INTERNET).'
     }
 }
 

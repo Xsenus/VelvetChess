@@ -8,6 +8,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Drawing.Common
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } else { $null }
 if (-not $sdk) { throw 'ANDROID_HOME or ANDROID_SDK_ROOT is required.' }
@@ -67,8 +68,30 @@ function Tap-Text([string]$Text) {
 
 function Capture([string]$Name) {
     $destination = Join-Path $output $Name
+    Start-Sleep -Milliseconds 500
     Invoke-Adb @('shell', 'screencap', '-p', "/sdcard/$Name") | Out-Null
     Invoke-Adb @('pull', "/sdcard/$Name", $destination) | Out-Null
+
+    # RuStore forbids Android status/navigation UI. Preserve the native 9:16
+    # application frame and mask only the fixed system-bar areas with the app's
+    # own background colour; application content is not cropped or rescaled.
+    $sanitized = "$destination.sanitized.png"
+    $bitmap = [Drawing.Bitmap]::new($destination)
+    try {
+        $graphics = [Drawing.Graphics]::FromImage($bitmap)
+        $background = [Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(11, 16, 32))
+        try {
+            $graphics.FillRectangle($background, 0, 0, $bitmap.Width, 64)
+            $graphics.FillRectangle($background, 0, $bitmap.Height - 48, $bitmap.Width, 48)
+            $bitmap.Save($sanitized, [Drawing.Imaging.ImageFormat]::Png)
+        } finally {
+            $background.Dispose()
+            $graphics.Dispose()
+        }
+    } finally {
+        $bitmap.Dispose()
+    }
+    Move-Item -LiteralPath $sanitized -Destination $destination -Force
     if ((Get-Item -LiteralPath $destination).Length -gt 3MB) { throw "Screenshot exceeds 3 MiB: $Name" }
     Write-Host "Captured: $destination" -ForegroundColor Green
 }
@@ -127,12 +150,6 @@ try {
     Tap-Text 'Профиль и рейтинг'
     Find-Text 'Гостевой профиль' | Out-Null
     Capture '07_profile.png'
-    Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '650', '500') | Out-Null
-    Find-Text 'Я   Войти с Яндекс ID' | Out-Null
-    Capture '09_profile_auth.png'
-    Tap-Text 'Я   Войти с Яндекс ID'
-    Find-Text 'Сервер аккаунтов ещё не указан в сборке приложения.' | Out-Null
-    Tap-Text 'Понятно'
 
     $fatal = (Invoke-Adb @('logcat', '-d', '-t', '2000', 'AndroidRuntime:E', '*:S')) -join "`n"
     if ($fatal -match 'FATAL EXCEPTION') { throw "AndroidRuntime crash found after navigation:`n$fatal" }

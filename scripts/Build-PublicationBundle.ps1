@@ -11,6 +11,10 @@ $screenshotZip = Join-Path $output 'VelvetChess-Game-Screenshots.zip'
 $publicationZip = Join-Path $output 'VelvetChess-1.0.0-RuStore-publication.zip'
 
 New-Item -ItemType Directory -Path $screenshots -Force | Out-Null
+# The directory can contain files from an earlier publication run. Remove only
+# previously exported PNG screenshots so deleted/renamed frames cannot leak
+# into the next store bundle.
+Get-ChildItem -LiteralPath $screenshots -File -Filter '*.png' -ErrorAction SilentlyContinue | Remove-Item -Force
 Copy-Item -LiteralPath (Get-ChildItem (Join-Path $repo 'store\rustore\screenshots\*.png')).FullName -Destination $screenshots -Force
 Compress-Archive -Path (Join-Path $screenshots '*') -DestinationPath $screenshotZip -Force
 Compress-Archive -Path (Join-Path $repo 'store\rustore\*') -DestinationPath $assetZip -Force
