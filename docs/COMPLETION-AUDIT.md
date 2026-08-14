@@ -16,18 +16,16 @@
 | Производительность | `GraphicsView`, фоновый ИИ, alpha-beta, iterative deepening, bounded cache | Release linking/AOT Android пройдены |
 | Графика | Бренд-арт, адаптивная доска, собственная иконка, Noto chess font | Android assets успешно скомпилированы; лицензии сохранены |
 | RuStore | Карточка, Markdown/HTML policy, release notes, checklist, icon и 6 скриншотов | Синхронный owner-data генератор; фактические Android API 35 кадры 1080×1920 до 3 МБ |
-| Git и релиз | `main`, CI, gitignore, безопасная воспроизводимая подпись | Сквозной dry-run release-ключом, preflight APK/AAB и GitHub Actions workflow |
+| Git и релиз | `main`, CI, gitignore, безопасная воспроизводимая подпись | Постоянный RSA-4096 сертификат владельца, строгий preflight APK/AAB и GitHub Actions workflow |
 | Будущий онлайн | Транспортный контракт и серверный roadmap | `IOnlineMatchService`, `docs/ONLINE-ROADMAP.md` |
 
 ## Требует владельца или внешнего устройства перед отправкой в магазин
 
 Это не может быть безопасно выдумано или выполнено от имени владельца:
 
-1. постоянный release keystore, выбранный и сохранённый владельцем;
-2. реальный email поддержки и публичный HTTPS URL политики конфиденциальности;
-3. проверка уникальности package ID в личной RuStore Консоли;
-4. установка QA APK и финальный проход `docs/QA.md` на реальном Android-устройстве;
-5. финальные скриншоты с этого устройства;
-6. для iOS — Mac с Xcode и личный Apple Developer signing profile.
+1. внешняя резервная копия созданного release-keystore и password-файла;
+2. проверка уникальности package ID в личной RuStore Консоли;
+3. установка подписанного APK и финальный проход `docs/QA.md` на реальном Android-устройстве;
+4. для iOS — Mac с Xcode и личный Apple Developer signing profile.
 
-QA APK/AAB с debug-подписью намеренно не выдаются за магазинную release-подпись.
+QA APK/AAB с debug-подписью и магазинные APK/AAB с постоянной подписью хранятся раздельно.

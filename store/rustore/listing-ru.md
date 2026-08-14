@@ -44,7 +44,7 @@
 
 ## Контакты (заполнить владельцу)
 
-- Разработчик: `TODO`
-- Email поддержки: `TODO@example.com`
-- Сайт: `https://TODO`
-- Страница политики конфиденциальности: `https://TODO/privacy/`
+- Разработчик: `Телятников Илья Александрович`
+- Email поддержки: `ilel@list.ru`
+- Сайт: `https://github.com/Xsenus/VelvetChess`
+- Страница политики конфиденциальности: `https://xsenus.github.io/VelvetChess/privacy/`

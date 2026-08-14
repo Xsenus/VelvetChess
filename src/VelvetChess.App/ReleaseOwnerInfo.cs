@@ -2,10 +2,10 @@ namespace VelvetChess.App;
 
 internal static class ReleaseOwnerInfo
 {
-    public const string DeveloperName = "TODO";
-    public const string SupportEmail = "TODO@example.com";
-    public const string WebsiteUrl = "https://TODO";
-    public const string PrivacyPolicyUrl = "https://TODO/privacy/";
+    public const string DeveloperName = "Телятников Илья Александрович";
+    public const string SupportEmail = "ilel@list.ru";
+    public const string WebsiteUrl = "https://github.com/Xsenus/VelvetChess";
+    public const string PrivacyPolicyUrl = "https://xsenus.github.io/VelvetChess/privacy/";
 
     public static bool IsConfigured =>
         !DeveloperName.Contains("TODO", StringComparison.OrdinalIgnoreCase) &&

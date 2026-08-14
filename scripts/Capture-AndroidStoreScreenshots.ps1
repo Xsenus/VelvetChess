@@ -74,8 +74,11 @@ function Capture([string]$Name) {
 }
 
 try {
+    if (-not $KeepAppData) {
+        $prefix = if ($DeviceId) { @('-s', $DeviceId) } else { @() }
+        & $adb @prefix uninstall ru.velvetchess.game 2>&1 | Out-Null
+    }
     Invoke-Adb @('install', '-r', $package) | Out-Host
-    if (-not $KeepAppData) { Invoke-Adb @('shell', 'pm', 'clear', 'ru.velvetchess.game') | Out-Host }
     Invoke-Adb @('logcat', '-c') | Out-Null
     Invoke-Adb @('shell', 'monkey', '-p', 'ru.velvetchess.game', '-c', 'android.intent.category.LAUNCHER', '1') | Out-Null
 
@@ -108,7 +111,7 @@ try {
     Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '750', '450') | Out-Null
     Find-Text 'Настройки и о приложении' | Out-Null
     Tap-Text 'Настройки и о приложении'
-    Find-Text 'Сбросить прогресс' | Out-Null
+    Find-Text 'Данные' | Out-Null
     Capture '05_settings_privacy.png'
 
     $fatal = (Invoke-Adb @('logcat', '-d', '-t', '2000', 'AndroidRuntime:E', '*:S')) -join "`n"

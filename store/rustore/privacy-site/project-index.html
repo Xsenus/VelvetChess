@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Шахматы Velvet</title>
+  <style>
+    :root { color-scheme:dark; --bg:#0b1020; --card:#151b2e; --text:#f3e9d6; --muted:#a4aec5; --gold:#d6ae68; --wine:#6e183e; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at 20% 10%,#351229 0,transparent 35%),var(--bg); color:var(--text); font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(760px,100%); padding:clamp(28px,7vw,72px); border:1px solid #2a334d; border-radius:32px; background:rgba(21,27,46,.96); box-shadow:0 30px 90px #0008; }
+    .eyebrow { color:var(--gold); font-weight:800; letter-spacing:.18em; }
+    h1 { margin:.2em 0; font-size:clamp(42px,10vw,76px); line-height:1; }
+    p { color:var(--muted); max-width:620px; }
+    nav { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }
+    a { display:inline-block; padding:13px 20px; border-radius:16px; background:var(--gold); color:#101522; font-weight:750; text-decoration:none; }
+    a.secondary { background:var(--wine); color:white; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">ШАХМАТЫ VELVET</div>
+    <h1>Ваша партия.<br>Ваш темп.</h1>
+    <p>Красивая офлайн-игра на .NET MAUI: полноценные шахматные правила, четыре уровня компьютерного соперника и коллекция из 50 тактических задач.</p>
+    <nav>
+      <a href="https://github.com/Xsenus/VelvetChess">Исходный код</a>
+      <a class="secondary" href="privacy/">Политика конфиденциальности</a>
+    </nav>
+  </main>
+</body>
+</html>
