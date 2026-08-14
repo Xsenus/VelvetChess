@@ -11,6 +11,7 @@ public sealed class ProfilePage : ContentPage
     private readonly Label _subtitle = new() { TextColor = Color.FromArgb("#9DA7BE"), FontSize = 14 };
     private readonly Grid _ratings = new() { ColumnSpacing = 10, RowSpacing = 10 };
     private readonly Grid _stats = new() { ColumnSpacing = 10, RowSpacing = 10 };
+    private readonly Label _ratingsNote = new() { FontSize = 12, TextColor = Color.FromArgb("#9DA7BE"), LineHeight = 1.3 };
     private readonly Label _syncNote = new() { FontSize = 11, TextColor = Color.FromArgb("#69738A") };
     private readonly Label _syncIntro = new() { FontSize = 14, TextColor = Color.FromArgb("#C7CDDC"), LineHeight = 1.35 };
     private readonly Button _signOut = new() { Text = "Выйти из аккаунта", HeightRequest = 48, BackgroundColor = Color.FromArgb("#202841"), TextColor = Colors.White, IsVisible = false };
@@ -32,7 +33,8 @@ public sealed class ProfilePage : ContentPage
         var header = new Grid { ColumnDefinitions = { new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Star) }, ColumnSpacing = 16 };
         header.Add(avatar, 0, 0); header.Add(identity, 1, 0);
 
-        ConfigureMetricGrid(_ratings, 3);
+        var accountFeatureEnabled = _account.IsAccountFeatureEnabled;
+        ConfigureMetricGrid(_ratings, accountFeatureEnabled ? 3 : 2);
         ConfigureMetricGrid(_stats, 2);
         var yandex = ProviderButton("Войти с Яндекс ID", "Я", Color.FromArgb("#FC3F1D"), IdentityProvider.Yandex);
         var vk = ProviderButton("Войти с VK ID", "VK", Color.FromArgb("#0077FF"), IdentityProvider.Vk);
@@ -45,19 +47,23 @@ public sealed class ProfilePage : ContentPage
             catch (HttpRequestException) { await DisplayAlert("Не удалось удалить аккаунт", "Сервер недоступен. Проверьте интернет и попробуйте снова.", "Понятно"); }
         };
 
-        Content = new ScrollView { Content = new VerticalStackLayout { Padding = 20, Spacing = 16, Children =
+        var content = new VerticalStackLayout { Padding = 20, Spacing = 16, Children =
         {
             Card(header, 18),
             Section("РЕЙТИНГ"), _ratings,
-            new Label { Text = "Локальные показатели хранятся на этом устройстве. Онлайн-рейтинг появится после входа и подключения сервера.", FontSize = 12, TextColor = Color.FromArgb("#9DA7BE"), LineHeight = 1.3 },
-            Section("СТАТИСТИКА"), _stats,
-            Section("СИНХРОНИЗАЦИЯ"),
-            Card(new VerticalStackLayout { Spacing = 11, Children =
+            _ratingsNote,
+            Section("СТАТИСТИКА"), _stats
+        }};
+        if (accountFeatureEnabled)
+        {
+            content.Children.Add(Section("СИНХРОНИЗАЦИЯ"));
+            content.Children.Add(Card(new VerticalStackLayout { Spacing = 11, Children =
             {
                 _syncIntro,
                 yandex, vk, _signOut, _deleteAccount, _syncNote
-            }}, 16)
-        }}};
+            }}, 16));
+        }
+        Content = new ScrollView { Content = content };
     }
 
     protected override async void OnAppearing()
@@ -71,19 +77,23 @@ public sealed class ProfilePage : ContentPage
     {
         _identityTitle.Text = _account.Current.IsGuest ? "Гостевой профиль" : _account.Current.DisplayName;
         _subtitle.Text = _account.Current.IsGuest ? "Прогресс доступен только на этом устройстве" : "Прогресс синхронизируется";
+        _ratingsNote.Text = _account.IsAccountFeatureEnabled
+            ? "Локальные показатели хранятся на этом устройстве. Онлайн-рейтинг доступен после входа."
+            : "Рейтинг и статистика хранятся локально на этом устройстве.";
         _signOut.IsVisible = !_account.Current.IsGuest;
         _deleteAccount.IsVisible = !_account.Current.IsGuest;
         _syncIntro.Text = _account.Current.IsGuest
             ? "Играйте без регистрации или войдите, чтобы перенести гостевой прогресс, использовать профиль в веб-версии и участвовать в общем рейтинге."
             : "Профиль подключён. Вторую кнопку входа можно использовать, чтобы привязать ещё один способ авторизации к тому же игроку.";
-        _syncNote.Text = _account.ExternalProvidersConfigured
-            ? "Вход использует Authorization Code + PKCE; токены провайдеров не сохраняются в приложении."
-            : "Для включения входа укажите публичный адрес Account API при сборке и добавьте выданные Яндекс/VK параметры только на сервере.";
+        _syncNote.Text = "Вход использует Authorization Code + PKCE; токены провайдеров не сохраняются в приложении.";
         _ratings.Children.Clear();
         _ratings.Add(Metric("Локальная игра", _state.LocalRating.ToString(), $"Лучший: {_state.BestLocalRating}"), 0, 0);
         _ratings.Add(Metric("Тактика", _state.PuzzleRating.ToString(), $"Решено: {_state.CompletedPuzzleCount}"), 1, 0);
-        var online = _account.ServerSnapshot?.Ratings.FirstOrDefault(x => x.Kind == RatingKind.OnlineRapid);
-        _ratings.Add(Metric("Онлайн", online?.Value.ToString() ?? "—", _account.Current.IsGuest ? "Требуется вход" : $"Партий: {online?.Games ?? 0}"), 2, 0);
+        if (_account.IsAccountFeatureEnabled)
+        {
+            var online = _account.ServerSnapshot?.Ratings.FirstOrDefault(x => x.Kind == RatingKind.OnlineRapid);
+            _ratings.Add(Metric("Онлайн", online?.Value.ToString() ?? "—", _account.Current.IsGuest ? "Требуется вход" : $"Партий: {online?.Games ?? 0}"), 2, 0);
+        }
         _stats.Children.Clear();
         _stats.Add(Metric("Партий", _state.GamesPlayed.ToString(), $"Побед: {_state.Wins}"), 0, 0);
         _stats.Add(Metric("Ничьи / поражения", $"{_state.Draws} / {_state.Losses}", "Локальные партии"), 1, 0);

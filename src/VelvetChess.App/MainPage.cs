@@ -37,7 +37,7 @@ public sealed class MainPage : ContentPage
                     new Label { Text = "ВАШ ПРОГРЕСС", FontSize = 12, CharacterSpacing = 1.4, TextColor = Color.FromArgb("#D6AE68") },
                     _progress
                 }}},
-                new Label { Text = "Гостевой режим работает без регистрации. Профиль уже подготовлен к будущей синхронизации с веб-версией.", FontSize = 12, TextColor = Color.FromArgb("#69738A"), Margin = new Thickness(2,6) }
+                new Label { Text = "Весь прогресс сохраняется локально на этом устройстве.", FontSize = 12, TextColor = Color.FromArgb("#69738A"), Margin = new Thickness(2,6) }
             }}
         }}};
     }

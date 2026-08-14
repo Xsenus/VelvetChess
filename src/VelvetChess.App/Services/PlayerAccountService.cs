@@ -28,7 +28,11 @@ public sealed class PlayerAccountService : IPlayerAccountService
 
     public PlayerProfile Current => _current ?? _guest;
     public ProfileSnapshot? ServerSnapshot => _session?.Profile;
-    public bool ExternalProvidersConfigured => TryGetApiBaseUri(out _);
+    /// <summary>
+    /// Controls whether account-related UI is included in this build. Until a
+    /// public Account API is supplied, the app remains a purely local product.
+    /// </summary>
+    public bool IsAccountFeatureEnabled => TryGetApiBaseUri(out _);
 
     public async Task RestoreAsync(CancellationToken cancellationToken = default)
     {
