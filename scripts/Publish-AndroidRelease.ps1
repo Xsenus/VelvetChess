@@ -37,7 +37,7 @@ try {
     $preflightArgs = @()
     if ($SkipTests) { $preflightArgs += '-SkipTests' }
     & (Join-Path $PSScriptRoot 'Test-RuStoreReadiness.ps1') @preflightArgs
-    if ($LASTEXITCODE -ne 0) { throw 'RuStore preflight must pass before a signed release is created.' }
+    if (-not $?) { throw 'RuStore preflight must pass before a signed release is created.' }
 
     $buildStarted = [DateTime]::UtcNow.AddSeconds(-2)
     $publishArgs = @(
@@ -67,7 +67,7 @@ try {
 
     foreach ($package in @($aabOutput, $apkOutput)) {
         & (Join-Path $PSScriptRoot 'Test-RuStoreReadiness.ps1') -PackagePath $package -SkipTests
-        if ($LASTEXITCODE -ne 0) { throw "Package verification failed: $package" }
+        if (-not $?) { throw "Package verification failed: $package" }
         $hash = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash
         [IO.File]::WriteAllText("$package.sha256", "$hash  $([IO.Path]::GetFileName($package))`n")
         Write-Host "Created: $package" -ForegroundColor Green
