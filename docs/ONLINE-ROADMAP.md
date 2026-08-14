@@ -4,7 +4,7 @@
 
 ## Этапы
 
-1. ASP.NET Core backend: регистрация, JWT/refresh tokens, профиль и рейтинг Glicko-2.
+1. ASP.NET Core Account API: профили, OAuth, JWT/rotating refresh tokens и хранилище — основа реализована; перед production остаются PostgreSQL и deployment.
 2. Матчмейкинг: очереди по контролю времени и диапазону рейтинга.
 3. SignalR: события матча, реконнект, серверные шахматные часы.
 4. Авторитетный сервер: каждый ход повторно проверяется шахматным ядром.

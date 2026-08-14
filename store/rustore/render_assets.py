@@ -78,7 +78,7 @@ art=Image.open(GRAPHICS/"brand_key_art_source.png").convert("RGB").resize((W,W))
 img.paste(art.crop((0,80,W,760)),(0,0)); d=ImageDraw.Draw(img)
 text(d,(72,814),"ВАША ПАРТИЯ. ВАШ ТЕМП.",25,GOLD,True)
 for i,line in enumerate(wrap(d,"Красивые шахматы, которые всегда рядом",900,64,True)): text(d,(72,875+i*74),line,64,IVORY,True)
-text(d,(72,1060),"Играйте и тренируйтесь полностью офлайн",30,MUTED)
+text(d,(72,1060),"Играйте офлайн или подключите профиль",30,MUTED)
 button(d,1150,"Продолжить партию"); button(d,1290,"50 тактических задач",BURGUNDY,"#FFFFFF")
 rounded(d,(72,1450,W-72,1690),28,SURFACE); text(d,(110,1500),"4 УРОВНЯ СЛОЖНОСТИ",24,GOLD,True)
 for i,line in enumerate(wrap(d,"Решено 12/50 · Партий 7 · Побед 3",820,31)): text(d,(110,1550+i*42),line,31,MUTED)
@@ -117,7 +117,7 @@ for i,(label,desc,on) in enumerate(settings):
     rounded(d,(W-220,y+57,W-94,y+123),33,GOLD if on else RAISED); d.ellipse((W-157,y+65,W-101,y+121),fill="#FFFFFF")
 text(d,(72,1010),"ВАШИ ДАННЫЕ",24,GOLD,True)
 rounded(d,(54,1060,W-54,1365),28,SURFACE)
-privacy="Игра работает офлайн. Персональные данные, реклама и аналитические идентификаторы не собираются. Партии и прогресс хранятся только на устройстве."
+privacy="Без входа партии и прогресс хранятся только на устройстве. Для опциональной синхронизации используется защищённый профиль. Рекламы и аналитики нет."
 for i,line in enumerate(wrap(d,privacy,850,29)): text(d,(94,1110+i*43),line,29,MUTED)
 button(d,1435,"Сбросить прогресс",BURGUNDY,"#FFFFFF")
 text(d,(W//2,1650),"Шахматы Velvet · версия 1.0.0",24,MUTED,False,"mm")

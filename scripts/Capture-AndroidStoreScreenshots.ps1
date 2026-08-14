@@ -130,6 +130,9 @@ try {
     Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '650', '500') | Out-Null
     Find-Text 'Я   Войти с Яндекс ID' | Out-Null
     Capture '09_profile_auth.png'
+    Tap-Text 'Я   Войти с Яндекс ID'
+    Find-Text 'Сервер аккаунтов ещё не указан в сборке приложения.' | Out-Null
+    Tap-Text 'Понятно'
 
     $fatal = (Invoke-Adb @('logcat', '-d', '-t', '2000', 'AndroidRuntime:E', '*:S')) -join "`n"
     if ($fatal -match 'FATAL EXCEPTION') { throw "AndroidRuntime crash found after navigation:`n$fatal" }

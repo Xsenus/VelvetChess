@@ -9,6 +9,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
 {
     private readonly PuzzleRepository _repository;
     private readonly AppStateService _state;
+    private readonly PlayerAccountService _account;
     private readonly ChessBoardView _board = new();
     private readonly Label _title = new() { FontSize = 22, FontFamily = "OpenSansSemibold" };
     private readonly Label _message = new() { FontSize = 14, TextColor = Color.FromArgb("#9DA7BE") };
@@ -17,10 +18,10 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
     private readonly Button _next = new() { Text = "Следующая задача", HeightRequest = 46, Margin = 4, IsVisible = false };
     private PuzzleSession? _session;
 
-    public PuzzlePlayPage(PuzzleRepository repository, AppStateService state)
+    public PuzzlePlayPage(PuzzleRepository repository, AppStateService state, PlayerAccountService account)
     {
         BackgroundColor = Color.FromArgb("#0B1020");
-        _repository = repository; _state = state; Title = "Решение задачи";
+        _repository = repository; _state = state; _account = account; Title = "Решение задачи";
         _board.ShowCoordinates = state.ShowCoordinates;
         _board.ShowLegalMoves = state.ShowLegalMoves; _board.HighlightLastMove = state.HighlightLastMove;
         _board.SetAppearance(state.PieceTheme, state.BoardTheme);
@@ -103,6 +104,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
     {
         if (_session is null) return;
         _board.InputEnabled = false; _state.MarkPuzzleSolved(_session.Puzzle.Id, _session.Puzzle.Rating);
+        try { await _account.RecordPuzzleResultAsync(_session.Puzzle.Id, _state.GetPuzzleAttempts(_session.Puzzle.Id), _session.Puzzle.Solution); } catch (Exception) { /* Local completion must work offline. */ }
         _message.Text = $"{_session.Puzzle.Explanation}\n\nВариант: {_session.SolutionText}";
         _next.IsVisible = true; _hint.IsVisible = false; _solution.IsVisible = false;
         await DisplayAlert("Задача решена", "Отлично! Все ответы соперника были показаны автоматически.", "Продолжить");

@@ -17,7 +17,7 @@
 | Графика | Бренд-арт, адаптивная доска, собственная иконка, Noto chess font | Android assets успешно скомпилированы; лицензии сохранены |
 | RuStore | Карточка, Markdown/HTML policy, release notes, checklist, icon и 9 скриншотов | Синхронный owner-data генератор; фактические Android API 35 кадры 1080×1920 до 3 МБ |
 | Git и релиз | `main`, CI, gitignore, безопасная воспроизводимая подпись | Постоянный RSA-4096 сертификат владельца, строгий preflight APK/AAB и GitHub Actions workflow |
-| Профиль и будущий онлайн | Гостевой профиль, локальные рейтинги, контракты аккаунта и серверный roadmap | `IPlayerAccountService`, `IOnlineMatchService`, `docs/AUTH-AND-RATING.md` |
+| Профиль и будущий онлайн | Гостевой профиль, локальные рейтинги, ASP.NET Core Account API, PKCE, rotating refresh tokens и CORS для веб-клиента | `IPlayerAccountService`, `VelvetChess.Server`, интеграционные API-тесты, `docs/AUTH-AND-RATING.md` |
 
 ## Требует владельца или внешнего устройства перед отправкой в магазин
 

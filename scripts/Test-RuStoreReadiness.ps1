@@ -69,12 +69,12 @@ function Test-ManifestPermissions([string]$ManifestText, [string]$ApplicationId)
     $permissions = [regex]::Matches($ManifestText, 'uses-permission(?:[^>]|\n)*?(?:android:)?name=[''"]([^''"]+)[''"]') |
         ForEach-Object { $_.Groups[1].Value } |
         Sort-Object -Unique
-    $allowed = @("$ApplicationId.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION", 'android.permission.VIBRATE')
+    $allowed = @("$ApplicationId.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION", 'android.permission.VIBRATE', 'android.permission.INTERNET')
     $unexpected = @($permissions | Where-Object { $_ -notin $allowed })
     if ($unexpected.Count) {
         Add-Failure "Unexpected Android permission(s): $($unexpected -join ', ')."
     } else {
-        Add-Pass 'No sensitive Android permissions are declared (VIBRATE is allowed for optional haptics).'
+        Add-Pass 'No sensitive Android permissions are declared (VIBRATE and INTERNET are allowed for optional haptics/account sync).'
     }
 }
 
@@ -153,6 +153,8 @@ try {
     if (-not $SkipTests) {
         & dotnet test 'tests\VelvetChess.Core.Tests\VelvetChess.Core.Tests.csproj' -c Release
         if ($LASTEXITCODE -eq 0) { Add-Pass 'Core test suite passed.' } else { Add-Failure 'Core test suite failed.' }
+        & dotnet test 'tests\VelvetChess.Server.Tests\VelvetChess.Server.Tests.csproj' -c Release
+        if ($LASTEXITCODE -eq 0) { Add-Pass 'Account API integration test suite passed.' } else { Add-Failure 'Account API integration test suite failed.' }
     }
 
     if ($PackagePath) {
