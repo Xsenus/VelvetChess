@@ -102,10 +102,10 @@ try {
         }
     } else {
         $listingText = Get-Content 'store\rustore\listing-ru.md' -Raw
-        $developerMatch = [regex]::Match($listingText, '(?m)^- Разработчик: `([^`]+)`$')
-        $emailMatch = [regex]::Match($listingText, '(?m)^- Email поддержки: `([^`]+)`$')
-        $siteMatch = [regex]::Match($listingText, '(?m)^- Сайт: `(https://[^`]+)`$')
-        $privacyMatch = [regex]::Match($listingText, '(?m)^- Страница политики конфиденциальности: `(https://[^`]+)`$')
+        $developerMatch = [regex]::Match($listingText, '(?m)^- Разработчик: `([^`]+)`\r?$')
+        $emailMatch = [regex]::Match($listingText, '(?m)^- Email поддержки: `([^`]+)`\r?$')
+        $siteMatch = [regex]::Match($listingText, '(?m)^- Сайт: `(https://[^`]+)`\r?$')
+        $privacyMatch = [regex]::Match($listingText, '(?m)^- Страница политики конфиденциальности: `(https://[^`]+)`\r?$')
         if (-not $developerMatch.Success -or -not $emailMatch.Success -or $emailMatch.Groups[1].Value -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$' -or -not $siteMatch.Success -or -not $privacyMatch.Success) {
             Add-Failure 'Owner email, website or privacy-policy URL is malformed.'
         } else {
