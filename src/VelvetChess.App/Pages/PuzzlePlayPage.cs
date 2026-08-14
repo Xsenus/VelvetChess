@@ -19,6 +19,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
 
     public PuzzlePlayPage(PuzzleRepository repository, AppStateService state)
     {
+        BackgroundColor = Color.FromArgb("#0B1020");
         _repository = repository; _state = state; Title = "Решение задачи";
         _board.ShowCoordinates = state.ShowCoordinates;
         _board.MoveRequested += OnMove;

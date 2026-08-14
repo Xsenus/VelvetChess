@@ -12,6 +12,7 @@ public sealed class PuzzlesPage : ContentPage
 
     public PuzzlesPage(PuzzleRepository repository, AppStateService state)
     {
+        BackgroundColor = Color.FromArgb("#0B1020");
         _repository = repository; _state = state; Title = "Тактическая коллекция";
         _list.ItemTemplate = new DataTemplate(() =>
         {

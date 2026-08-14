@@ -11,6 +11,7 @@ public sealed class MainPage : ContentPage
 
     public MainPage()
     {
+        BackgroundColor = Color.FromArgb("#0B1020");
         Title = "Шахматы Velvet";
         _play.Clicked += async (_, _) => await Shell.Current.GoToAsync(nameof(GamePage));
         var puzzles = new Button { Text = "Тактические задачи", BackgroundColor = Color.FromArgb("#6E183E"), TextColor = Colors.White };

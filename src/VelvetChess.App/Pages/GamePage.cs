@@ -21,6 +21,7 @@ public sealed class GamePage : ContentPage
 
     public GamePage(ChessAi ai, AppStateService state)
     {
+        BackgroundColor = Color.FromArgb("#0B1020");
         _ai = ai; _state = state; _session = state.LoadGame(); Title = "Локальная партия";
         foreach (var level in Enum.GetValues<Difficulty>()) _difficulty.Items.Add(DifficultyProfile.For(level).DisplayName);
         _difficulty.SelectedIndex = (int)state.Difficulty;

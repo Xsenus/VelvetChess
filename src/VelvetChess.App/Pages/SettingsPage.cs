@@ -8,6 +8,7 @@ public sealed class SettingsPage : ContentPage
 
     public SettingsPage(AppStateService state)
     {
+        BackgroundColor = Color.FromArgb("#0B1020");
         _state = state; Title = "Настройки";
         var coordinates = SettingSwitch("Координаты доски", "Показывать буквы и цифры у полей", state.ShowCoordinates, value => state.ShowCoordinates = value);
         var haptics = SettingSwitch("Тактильный отклик", "Короткий отклик после хода", state.HapticsEnabled, value => state.HapticsEnabled = value);

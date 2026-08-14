@@ -3,7 +3,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "store" / "rustore"
-SHOTS = OUT / "screenshots"
+# Visual mockups are useful for layout experiments, but must never overwrite the
+# real Android captures shipped to RuStore.
+SHOTS = ROOT / "artifacts" / "store-mockups"
 GRAPHICS = OUT / "graphics"
 SHOTS.mkdir(parents=True, exist_ok=True)
 GRAPHICS.mkdir(parents=True, exist_ok=True)
@@ -129,4 +131,4 @@ for i,line in enumerate(wrap(d,"Вилка: конь атакует короля
 button(d,1640,"Следующая задача",GOLD,"#101522")
 save(img,"06_puzzle_solution.png")
 
-print("Rendered icon and 6 screenshots")
+print(f"Rendered icon and 6 non-production mockups in {SHOTS}")
