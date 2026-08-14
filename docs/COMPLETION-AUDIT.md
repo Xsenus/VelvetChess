@@ -15,7 +15,7 @@
 | Сохранение | Партия, сложность, настройки, статистика и прогресс задач | Независимый `UserStateStore`, тесты повреждённых данных; iOS Privacy Manifest обновлён |
 | Производительность | `GraphicsView`, фоновый ИИ, alpha-beta, iterative deepening, bounded cache | Release linking/AOT Android пройдены |
 | Графика | Бренд-арт, адаптивная доска, собственная иконка, Noto chess font | Android assets успешно скомпилированы; лицензии сохранены |
-| RuStore | Карточка, policy, release notes, checklist, icon и 6 скриншотов | 1080×1920 PNG до 3 МБ; manifest/aapt проверка |
+| RuStore | Карточка, Markdown/HTML policy, release notes, checklist, icon и 6 скриншотов | Синхронный owner-data генератор; 1080×1920 PNG до 3 МБ |
 | Git и релиз | `main`, CI, gitignore, безопасная воспроизводимая подпись | Сквозной dry-run release-ключом, preflight APK/AAB и GitHub Actions workflow |
 | Будущий онлайн | Транспортный контракт и серверный roadmap | `IOnlineMatchService`, `docs/ONLINE-ROADMAP.md` |
 

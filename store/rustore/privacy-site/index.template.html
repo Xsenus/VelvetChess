@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="robots" content="index,follow">
+  <title>Политика конфиденциальности — Шахматы Velvet</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1020; --card:#151b2e; --text:#f3e9d6; --muted:#a4aec5; --gold:#d6ae68; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(820px,calc(100% - 32px)); margin:48px auto; padding:clamp(24px,6vw,64px); background:var(--card); border-radius:28px; }
+    h1 { margin:0 0 8px; font-size:clamp(32px,7vw,52px); line-height:1.08; }
+    h2 { margin-top:34px; color:var(--gold); font-size:20px; }
+    p,li { color:var(--muted); }
+    a { color:var(--gold); }
+    .brand,.date { color:var(--gold); font-weight:700; }
+    footer { margin-top:42px; padding-top:24px; border-top:1px solid #2a334d; font-size:14px; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <div class="brand">ШАХМАТЫ VELVET</div>
+  <h1>Политика конфиденциальности</h1>
+  <p class="date">Дата вступления в силу: {{EFFECTIVE_DATE}}</p>
+
+  <h2>Какие данные обрабатывает приложение</h2>
+  <p>Версия 1.0 приложения «Шахматы Velvet» работает полностью офлайн и не собирает, не передаёт, не продаёт и не предоставляет третьим лицам персональные данные пользователей.</p>
+  <p>Приложение не создаёт учётные записи и не использует рекламные идентификаторы, аналитику, геолокацию, контакты, камеру, микрофон или пользовательские файлы.</p>
+
+  <h2>Локальные данные</h2>
+  <p>Сохранённая партия, настройки, статистика и прогресс задач хранятся только на устройстве средствами операционной системы. Они могут быть удалены через экран настроек приложения или при удалении приложения.</p>
+
+  <h2>Передача и хранение</h2>
+  <p>Приложение не подключается к серверу и не передаёт игровые или пользовательские данные по сети. Срок внешнего хранения отсутствует, поскольку внешнее хранение не выполняется.</p>
+
+  <h2>Будущие изменения</h2>
+  <p>До появления онлайн-функций политика будет обновлена. Если обработка данных станет необходимой, пользователю заранее сообщат цели, состав данных, правовое основание и доступные способы управления ими.</p>
+
+  <h2>Разработчик и контакты</h2>
+  <p>Разработчик: {{DEVELOPER_NAME}}.<br>
+     Сайт: <a href="{{WEBSITE_URL}}">{{WEBSITE_URL}}</a>.<br>
+     Вопросы о конфиденциальности: <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>.</p>
+
+  <footer>Актуальная версия политики всегда доступна по адресу <a href="{{PRIVACY_POLICY_URL}}">{{PRIVACY_POLICY_URL}}</a>.</footer>
+</main>
+</body>
+</html>

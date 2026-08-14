@@ -21,8 +21,18 @@ keytool -genkeypair -v -keystore velvet-release.keystore -alias velvet -keyalg R
 
 1. Храните keystore и его резервную копию вне репозитория.
 2. Создайте вне репозитория два текстовых файла, содержащих только пароль keystore и пароль ключа. Ограничьте доступ к ним средствами ОС и удалите рабочие копии после выпуска.
-3. Заполните контакты вместо `TODO` в `store/rustore/listing-ru.md` и `store/rustore/privacy-policy.md`.
-4. Запустите:
+3. Сгенерируйте синхронизированные контакты и автономный privacy-site:
+
+```powershell
+.\scripts\Set-ReleaseOwnerData.ps1 `
+  -DeveloperName "Имя разработчика" `
+  -SupportEmail "support@example.ru" `
+  -WebsiteUrl "https://example.ru" `
+  -PrivacyPolicyUrl "https://example.ru/velvet-chess/privacy/"
+```
+
+4. Разместите `store/rustore/privacy-site/index.html` по указанному HTTPS-адресу и проверьте его в приватном окне браузера.
+5. Запустите подписанную сборку:
 
 ```powershell
 .\scripts\Publish-AndroidRelease.ps1 `

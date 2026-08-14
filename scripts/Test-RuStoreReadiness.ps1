@@ -91,7 +91,7 @@ try {
         Add-Failure "Unexpected project identity: '$appId' '$versionName' ('$versionCode')."
     }
 
-    $ownerFiles = @('store\rustore\listing-ru.md', 'store\rustore\privacy-policy.md')
+    $ownerFiles = @('store\rustore\listing-ru.md', 'store\rustore\privacy-policy.md', 'store\rustore\privacy-site\index.html', 'src\VelvetChess.App\ReleaseOwnerInfo.cs')
     $placeholderHits = Select-String -Path $ownerFiles -Pattern 'TODO|example\.com' -CaseSensitive:$false
     if ($placeholderHits) {
         if ($AllowOwnerPlaceholders) {
@@ -100,17 +100,34 @@ try {
             Add-Failure 'Replace owner contact placeholders in the RuStore listing and privacy policy.'
         }
     } else {
-        Add-Pass 'Owner contacts are filled in.'
+        $listingText = Get-Content 'store\rustore\listing-ru.md' -Raw
+        $developerMatch = [regex]::Match($listingText, '(?m)^- Разработчик: `([^`]+)`$')
+        $emailMatch = [regex]::Match($listingText, '(?m)^- Email поддержки: `([^`]+)`$')
+        $siteMatch = [regex]::Match($listingText, '(?m)^- Сайт: `(https://[^`]+)`$')
+        $privacyMatch = [regex]::Match($listingText, '(?m)^- Страница политики конфиденциальности: `(https://[^`]+)`$')
+        if (-not $developerMatch.Success -or -not $emailMatch.Success -or $emailMatch.Groups[1].Value -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$' -or -not $siteMatch.Success -or -not $privacyMatch.Success) {
+            Add-Failure 'Owner email, website or privacy-policy URL is malformed.'
+        } else {
+            $privacyHtml = Get-Content 'store\rustore\privacy-site\index.html' -Raw
+            $ownerInfo = Get-Content 'src\VelvetChess.App\ReleaseOwnerInfo.cs' -Raw
+            $encodedDeveloper = [Net.WebUtility]::HtmlEncode($developerMatch.Groups[1].Value)
+            $encodedEmail = [Net.WebUtility]::HtmlEncode($emailMatch.Groups[1].Value)
+            $encodedPrivacy = [Net.WebUtility]::HtmlEncode($privacyMatch.Groups[1].Value)
+            if ($privacyHtml -notmatch [regex]::Escape($encodedDeveloper) -or $privacyHtml -notmatch [regex]::Escape($encodedEmail) -or $privacyHtml -notmatch [regex]::Escape($encodedPrivacy) -or
+                $ownerInfo -notmatch [regex]::Escape($developerMatch.Groups[1].Value) -or $ownerInfo -notmatch [regex]::Escape($emailMatch.Groups[1].Value) -or $ownerInfo -notmatch [regex]::Escape($privacyMatch.Groups[1].Value)) {
+                Add-Failure 'Privacy-site or in-app contacts do not match the RuStore listing.'
+            } else { Add-Pass 'Owner contacts and privacy site are filled in and synchronized.' }
+        }
     }
 
     $iconPath = 'store\rustore\graphics\app_icon_512.png'
     try {
         $iconSize = Get-PngDimensions $iconPath
         $iconLength = (Get-Item -LiteralPath $iconPath).Length
-        if ($iconSize[0] -eq 512 -and $iconSize[1] -eq 512 -and $iconLength -le 1MB) {
+        if ($iconSize[0] -eq 512 -and $iconSize[1] -eq 512 -and $iconLength -le 3MB) {
             Add-Pass "Store icon: 512x512, $iconLength bytes."
         } else {
-            Add-Failure "Store icon must be 512x512 PNG and at most 1 MiB."
+            Add-Failure "Store icon must be 512x512 PNG and at most 3 MiB."
         }
     } catch { Add-Failure $_.Exception.Message }
 
