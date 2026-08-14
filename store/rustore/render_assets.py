@@ -121,7 +121,7 @@ privacy="Игра работает офлайн. Персональные дан
 for i,line in enumerate(wrap(d,privacy,850,29)): text(d,(94,1110+i*43),line,29,MUTED)
 button(d,1435,"Сбросить прогресс",BURGUNDY,"#FFFFFF")
 text(d,(W//2,1650),"Шахматы Velvet · версия 1.0.0",24,MUTED,False,"mm")
-save(img,"05_settings_privacy.png")
+save(img,"05_settings_appearance.png")
 
 # 06 — solved puzzle with the complete line.
 img=Image.new("RGB",(W,H),NAVY); d=ImageDraw.Draw(img); header(d,"Задача решена","Точная линия найдена")

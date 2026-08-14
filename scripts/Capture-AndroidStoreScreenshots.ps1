@@ -111,8 +111,8 @@ try {
     Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '750', '450') | Out-Null
     Find-Text 'Настройки и о приложении' | Out-Null
     Tap-Text 'Настройки и о приложении'
-    Find-Text 'Данные' | Out-Null
-    Capture '05_settings_privacy.png'
+    Find-Text 'Оформление' | Out-Null
+    Capture '05_settings_appearance.png'
 
     $fatal = (Invoke-Adb @('logcat', '-d', '-t', '2000', 'AndroidRuntime:E', '*:S')) -join "`n"
     if ($fatal -match 'FATAL EXCEPTION') { throw "AndroidRuntime crash found after navigation:`n$fatal" }

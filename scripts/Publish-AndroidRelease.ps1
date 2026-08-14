@@ -34,12 +34,15 @@ New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
 
 Push-Location $repo
 try {
-    $preflightArgs = @()
-    if ($SkipTests) { $preflightArgs += '-SkipTests' }
+    $preflightArgs = @{}
+    if ($SkipTests) { $preflightArgs['SkipTests'] = $true }
     & (Join-Path $PSScriptRoot 'Test-RuStoreReadiness.ps1') @preflightArgs
     if (-not $?) { throw 'RuStore preflight must pass before a signed release is created.' }
 
-    $buildStarted = [DateTime]::UtcNow.AddSeconds(-2)
+    # A signed store package must never be selected from an earlier incremental build.
+    & dotnet clean 'src\VelvetChess.App\VelvetChess.App.csproj' -f net9.0-android -c Release --nologo
+    if ($LASTEXITCODE -ne 0) { throw 'Android release clean failed.' }
+
     $publishArgs = @(
         'publish', 'src\VelvetChess.App\VelvetChess.App.csproj',
         '-f', 'net9.0-android', '-c', 'Release',
@@ -56,8 +59,8 @@ try {
     [xml]$project = Get-Content 'src\VelvetChess.App\VelvetChess.App.csproj' -Raw
     $version = [string]($project.Project.PropertyGroup.ApplicationDisplayVersion | Select-Object -First 1)
     $buildRoot = Join-Path $repo 'src\VelvetChess.App\bin\Release\net9.0-android'
-    $signedAab = Get-ChildItem $buildRoot -Recurse -File -Filter '*-Signed.aab' | Where-Object LastWriteTimeUtc -ge $buildStarted | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
-    $signedApk = Get-ChildItem $buildRoot -Recurse -File -Filter '*-Signed.apk' | Where-Object LastWriteTimeUtc -ge $buildStarted | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    $signedAab = Get-ChildItem $buildRoot -Recurse -File -Filter '*-Signed.aab' | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    $signedApk = Get-ChildItem $buildRoot -Recurse -File -Filter '*-Signed.apk' | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
     if (-not $signedAab -or -not $signedApk) { throw 'Signed APK/AAB outputs were not found.' }
 
     $aabOutput = Join-Path $resolvedOutput "VelvetChess-$version-RuStore-signed.aab"

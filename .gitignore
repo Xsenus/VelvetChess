@@ -13,6 +13,7 @@ obj/
 *.apk
 *.aab
 artifacts/
+/outputs/
 TestResults/
 work_puzzles.csv.zst
 work/

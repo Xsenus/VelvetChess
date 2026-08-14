@@ -13,6 +13,8 @@ public sealed class AppStateService
     public bool ShowCoordinates { get => _state.ShowCoordinates; set => _state.ShowCoordinates = value; }
     public bool HapticsEnabled { get => _state.HapticsEnabled; set => _state.HapticsEnabled = value; }
     public bool ConfirmNewGame { get => _state.ConfirmNewGame; set => _state.ConfirmNewGame = value; }
+    public PieceTheme PieceTheme { get => _state.PieceTheme; set => _state.PieceTheme = value; }
+    public BoardTheme BoardTheme { get => _state.BoardTheme; set => _state.BoardTheme = value; }
     public bool HasSavedGame => _state.HasSavedGame;
     public int GamesPlayed => _state.GamesPlayed;
     public int Wins => _state.Wins;

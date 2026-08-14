@@ -22,6 +22,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
         BackgroundColor = Color.FromArgb("#0B1020");
         _repository = repository; _state = state; Title = "Решение задачи";
         _board.ShowCoordinates = state.ShowCoordinates;
+        _board.SetAppearance(state.PieceTheme, state.BoardTheme);
         _board.MoveRequested += OnMove;
         _hint.Clicked += async (_, _) => { if (_session is not null) await DisplayAlert("Подсказка", _session.Puzzle.Hint, "Понятно"); };
         _solution.Clicked += async (_, _) => await RevealSolutionAsync();
@@ -47,7 +48,7 @@ public sealed class PuzzlePlayPage : ContentPage, IQueryAttributable
         if (puzzle is null) { _message.Text = "Задача не найдена."; return; }
         _session = new PuzzleSession(puzzle); _title.Text = puzzle.Title;
         _message.Text = $"Сложность: {puzzle.Rating} · {puzzle.Theme}"; _next.IsVisible = false; _hint.IsVisible = true; _solution.IsVisible = true;
-        _board.InputEnabled = true; _board.ShowCoordinates = _state.ShowCoordinates; _board.Flipped = puzzle.SideToMove == PieceColor.Black; _board.SetBoard(_session.Board);
+        _board.InputEnabled = true; _board.ShowCoordinates = _state.ShowCoordinates; _board.SetAppearance(_state.PieceTheme, _state.BoardTheme); _board.Flipped = puzzle.SideToMove == PieceColor.Black; _board.SetBoard(_session.Board);
     }
 
     private async void OnMove(object? sender, Move move)

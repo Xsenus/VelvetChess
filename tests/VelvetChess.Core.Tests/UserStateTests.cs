@@ -45,7 +45,9 @@ public sealed class UserStateTests
             Difficulty = Difficulty.Expert,
             ShowCoordinates = false,
             HapticsEnabled = false,
-            ConfirmNewGame = false
+            ConfirmNewGame = false,
+            PieceTheme = PieceTheme.Royal,
+            BoardTheme = BoardTheme.Forest
         };
         state.RecordFinishedGame(new(GameOutcome.Checkmate, PieceColor.White));
         state.RecordFinishedGame(new(GameOutcome.Stalemate));
@@ -57,6 +59,7 @@ public sealed class UserStateTests
         Assert.Empty(state.CompletedPuzzles);
         Assert.Equal(Difficulty.Expert, state.Difficulty);
         Assert.False(state.ShowCoordinates); Assert.False(state.HapticsEnabled); Assert.False(state.ConfirmNewGame);
+        Assert.Equal(PieceTheme.Royal, state.PieceTheme); Assert.Equal(BoardTheme.Forest, state.BoardTheme);
     }
 
     [Fact]
@@ -65,9 +68,11 @@ public sealed class UserStateTests
         var memory = new MemoryStore();
         memory.SetInt("stats.games.v1", -3); memory.SetInt("stats.wins.v1", 99); memory.SetInt("stats.draws.v1", 99);
         memory.SetInt("game.difficulty.v1", 99);
+        memory.SetInt("settings.pieceTheme.v1", 99); memory.SetInt("settings.boardTheme.v1", -4);
         var state = new UserStateStore(memory);
         Assert.Equal((0, 0, 0), (state.GamesPlayed, state.Wins, state.Draws));
         Assert.Equal(Difficulty.Expert, state.Difficulty);
+        Assert.Equal(PieceTheme.Minimal, state.PieceTheme); Assert.Equal(BoardTheme.Velvet, state.BoardTheme);
     }
 
     private sealed class MemoryStore : IKeyValueStore

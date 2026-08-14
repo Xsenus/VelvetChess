@@ -26,7 +26,7 @@ public sealed class GamePage : ContentPage
         foreach (var level in Enum.GetValues<Difficulty>()) _difficulty.Items.Add(DifficultyProfile.For(level).DisplayName);
         _difficulty.SelectedIndex = (int)state.Difficulty;
         _difficulty.SelectedIndexChanged += (_, _) => { if (_difficulty.SelectedIndex >= 0) _state.Difficulty = (Difficulty)_difficulty.SelectedIndex; };
-        _boardView.ShowCoordinates = state.ShowCoordinates; _boardView.SetBoard(_session.Board); _boardView.MoveRequested += OnMoveRequested;
+        _boardView.ShowCoordinates = state.ShowCoordinates; _boardView.SetAppearance(state.PieceTheme, state.BoardTheme); _boardView.SetBoard(_session.Board); _boardView.MoveRequested += OnMoveRequested;
         var restart = new Button { Text = "Новая партия", HeightRequest = 48, FontSize = 13 };
         restart.Clicked += async (_, _) => await ConfirmNewGameAsync();
         _undo.Clicked += (_, _) => UndoTurn();
@@ -47,6 +47,7 @@ public sealed class GamePage : ContentPage
     {
         base.OnAppearing();
         _boardView.ShowCoordinates = _state.ShowCoordinates;
+        _boardView.SetAppearance(_state.PieceTheme, _state.BoardTheme);
         if (_session.Board.SideToMove == PieceColor.Black && !_session.Board.GetStatus().IsFinished) _ = RunAiAsync();
     }
 

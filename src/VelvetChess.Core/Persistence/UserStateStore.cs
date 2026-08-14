@@ -17,6 +17,8 @@ public sealed class UserStateStore(IKeyValueStore storage)
     private const string CoordinatesKey = "settings.coordinates.v1";
     private const string HapticsKey = "settings.haptics.v1";
     private const string ConfirmNewGameKey = "settings.confirmNewGame.v1";
+    private const string PieceThemeKey = "settings.pieceTheme.v1";
+    private const string BoardThemeKey = "settings.boardTheme.v1";
 
     public Difficulty Difficulty
     {
@@ -27,6 +29,16 @@ public sealed class UserStateStore(IKeyValueStore storage)
     public bool ShowCoordinates { get => storage.GetBool(CoordinatesKey, true); set => storage.SetBool(CoordinatesKey, value); }
     public bool HapticsEnabled { get => storage.GetBool(HapticsKey, true); set => storage.SetBool(HapticsKey, value); }
     public bool ConfirmNewGame { get => storage.GetBool(ConfirmNewGameKey, true); set => storage.SetBool(ConfirmNewGameKey, value); }
+    public PieceTheme PieceTheme
+    {
+        get => (PieceTheme)Math.Clamp(storage.GetInt(PieceThemeKey, (int)PieceTheme.Tournament), 0, 4);
+        set => storage.SetInt(PieceThemeKey, Math.Clamp((int)value, 0, 4));
+    }
+    public BoardTheme BoardTheme
+    {
+        get => (BoardTheme)Math.Clamp(storage.GetInt(BoardThemeKey, (int)BoardTheme.Velvet), 0, 4);
+        set => storage.SetInt(BoardThemeKey, Math.Clamp((int)value, 0, 4));
+    }
     public bool HasSavedGame => !string.IsNullOrWhiteSpace(storage.GetString(SavedMovesKey));
     public int GamesPlayed => Math.Max(0, storage.GetInt(GamesKey));
     public int Wins => Math.Clamp(storage.GetInt(WinsKey), 0, GamesPlayed);
