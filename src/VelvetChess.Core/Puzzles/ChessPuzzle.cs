@@ -23,6 +23,7 @@ public sealed class PuzzleSession
     public string SolutionText { get; }
     public int Ply { get; private set; }
     public bool IsComplete => Ply >= Puzzle.Solution.Count;
+    public bool HasPendingOpponentMove => !IsComplete && Ply % 2 == 1;
 
     public PuzzleSession(ChessPuzzle puzzle)
     {
@@ -31,17 +32,30 @@ public sealed class PuzzleSession
         SolutionText = FormatSolution(puzzle);
     }
 
-    public PuzzleMoveResult TryMove(string uci)
+    public PuzzleMoveResult TrySolverMove(string uci)
     {
         if (IsComplete) return PuzzleMoveResult.Complete;
+        if (HasPendingOpponentMove) throw new InvalidOperationException("The opponent reply must be applied before the next solver move.");
         if (!string.Equals(Puzzle.Solution[Ply], uci, StringComparison.OrdinalIgnoreCase)) return PuzzleMoveResult.Wrong;
         Board.ApplyLegalMove(Move.ParseUci(uci));
         Ply++;
-        while (!IsComplete && Ply % 2 == 1)
-        {
-            Board.ApplyLegalMove(Move.ParseUci(Puzzle.Solution[Ply]));
-            Ply++;
-        }
+        return IsComplete ? PuzzleMoveResult.Complete : PuzzleMoveResult.Correct;
+    }
+
+    public Move ApplyOpponentMove()
+    {
+        if (!HasPendingOpponentMove) throw new InvalidOperationException("There is no pending opponent move.");
+        var move = Move.ParseUci(Puzzle.Solution[Ply]);
+        Board.ApplyLegalMove(move);
+        Ply++;
+        return move;
+    }
+
+    public PuzzleMoveResult TryMove(string uci)
+    {
+        var result = TrySolverMove(uci);
+        if (result == PuzzleMoveResult.Wrong) return result;
+        while (HasPendingOpponentMove) ApplyOpponentMove();
         return IsComplete ? PuzzleMoveResult.Complete : PuzzleMoveResult.Correct;
     }
 

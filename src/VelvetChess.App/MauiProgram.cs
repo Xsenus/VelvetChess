@@ -18,6 +18,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ChessAi>();
         builder.Services.AddSingleton<PuzzleRepository>();
         builder.Services.AddSingleton<AppStateService>();
+        builder.Services.AddSingleton<PlayerAccountService>();
 #if DEBUG
         builder.Logging.AddDebug();
 #endif

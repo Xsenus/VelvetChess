@@ -69,11 +69,12 @@ function Test-ManifestPermissions([string]$ManifestText, [string]$ApplicationId)
     $permissions = [regex]::Matches($ManifestText, 'uses-permission(?:[^>]|\n)*?(?:android:)?name=[''"]([^''"]+)[''"]') |
         ForEach-Object { $_.Groups[1].Value } |
         Sort-Object -Unique
-    $unexpected = @($permissions | Where-Object { $_ -ne "$ApplicationId.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" })
+    $allowed = @("$ApplicationId.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION", 'android.permission.VIBRATE')
+    $unexpected = @($permissions | Where-Object { $_ -notin $allowed })
     if ($unexpected.Count) {
         Add-Failure "Unexpected Android permission(s): $($unexpected -join ', ')."
     } else {
-        Add-Pass 'No sensitive Android permissions are declared.'
+        Add-Pass 'No sensitive Android permissions are declared (VIBRATE is allowed for optional haptics).'
     }
 }
 

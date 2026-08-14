@@ -14,8 +14,11 @@ public sealed class ChessBoardView : GraphicsView
     public bool ShowCoordinates { get => _drawable.ShowCoordinates; set { _drawable.ShowCoordinates = value; Invalidate(); } }
     public PieceTheme PieceTheme { get => _drawable.PieceTheme; set { _drawable.PieceTheme = value; Invalidate(); } }
     public BoardTheme BoardTheme { get => _drawable.BoardTheme; set { _drawable.BoardTheme = value; Invalidate(); } }
+    public bool ShowLegalMoves { get => _drawable.ShowLegalMoves; set { _drawable.ShowLegalMoves = value; Invalidate(); } }
+    public bool HighlightLastMove { get => _drawable.HighlightLastMove; set { _drawable.HighlightLastMove = value; Invalidate(); } }
     public bool InputEnabled { get; set; } = true;
     public event EventHandler<Move>? MoveRequested;
+    public event Action<int?>? SelectionChanged;
 
     public ChessBoardView()
     {
@@ -26,7 +29,12 @@ public sealed class ChessBoardView : GraphicsView
         StartInteraction += OnTap;
     }
 
-    public void SetBoard(ChessBoard board) { Board = board; ClearSelection(); }
+    public void SetBoard(ChessBoard board, Move? lastMove = null)
+    {
+        Board = board;
+        _drawable.LastMove = lastMove;
+        ClearSelection();
+    }
     public void SetAppearance(PieceTheme pieces, BoardTheme board)
     {
         _drawable.PieceTheme = pieces;
@@ -34,7 +42,37 @@ public sealed class ChessBoardView : GraphicsView
         Invalidate();
     }
 
-    public void ClearSelection() { _selected = -1; _moves = []; Invalidate(); }
+    public async Task AnimateMoveAsync(Move move, Piece movingPiece, ChessBoard board, bool enabled = true, uint duration = 220)
+    {
+        Board = board;
+        _drawable.LastMove = move;
+        if (!enabled)
+        {
+            _drawable.ClearAnimation();
+            ClearSelection();
+            return;
+        }
+
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _drawable.BeginAnimation(move, movingPiece);
+        new Animation(value => { _drawable.AnimationProgress = (float)value; Invalidate(); }, 0, 1, Easing.CubicOut)
+            .Commit(this, "piece-move", 16, duration, finished: (_, _) =>
+            {
+                _drawable.ClearAnimation();
+                Invalidate();
+                completion.TrySetResult();
+            });
+        await completion.Task;
+        ClearSelection();
+    }
+
+    public void ClearSelection()
+    {
+        var changed = _selected >= 0;
+        _selected = -1; _moves = []; Invalidate();
+        SemanticProperties.SetDescription(this, "Интерактивная шахматная доска. Коснитесь фигуры, затем поля назначения.");
+        if (changed) SelectionChanged?.Invoke(null);
+    }
 
     private void OnTap(object? sender, TouchEventArgs args)
     {
@@ -51,7 +89,9 @@ public sealed class ChessBoardView : GraphicsView
         var piece = Board[square];
         if (!piece.IsNone && piece.Color == Board.SideToMove)
         {
-            _selected = square; _moves = Board.GenerateLegalMoves().Where(m => m.From == square).ToArray(); Invalidate();
+            _selected = square; _moves = Board.GenerateLegalMoves().Where(m => m.From == square).ToArray();
+            SemanticProperties.SetDescription(this, $"Выбрано поле {ChessSquare.Name(square)}. Доступно ходов: {_moves.Select(move => move.To).Distinct().Count()}.");
+            SelectionChanged?.Invoke(square); Invalidate();
         }
         else ClearSelection();
     }
@@ -73,6 +113,15 @@ public sealed class ChessBoardView : GraphicsView
         public bool ShowCoordinates { get; set; } = true;
         public PieceTheme PieceTheme { get; set; } = PieceTheme.Tournament;
         public BoardTheme BoardTheme { get; set; } = BoardTheme.Velvet;
+        public bool ShowLegalMoves { get; set; } = true;
+        public bool HighlightLastMove { get; set; } = true;
+        public Move? LastMove { get; set; }
+        public Move? AnimationMove { get; private set; }
+        public Piece AnimationPiece { get; private set; } = Piece.None;
+        public float AnimationProgress { get; set; }
+
+        public void BeginAnimation(Move move, Piece piece) { AnimationMove = move; AnimationPiece = piece; AnimationProgress = 0; }
+        public void ClearAnimation() { AnimationMove = null; AnimationPiece = Piece.None; AnimationProgress = 0; }
 
         public void Draw(ICanvas canvas, RectF dirtyRect)
         {
@@ -87,17 +136,50 @@ public sealed class ChessBoardView : GraphicsView
                 var square = rank * 8 + file; var rect = new RectF(ox + shownFile * cell, oy + shownRank * cell, cell, cell);
                 var isDark = (file + rank) % 2 == 0;
                 canvas.FillColor = Color.FromArgb(isDark ? palette.Dark : palette.Light); canvas.FillRectangle(rect);
-                if (square == selected()) { canvas.FillColor = Color.FromArgb($"99{palette.Selection[1..]}"); canvas.FillRectangle(rect); }
-                if (moves().Any(m => m.To == square))
+                if (HighlightLastMove && LastMove is { } last && square is var lastSquare && (lastSquare == last.From || lastSquare == last.To))
+                {
+                    canvas.FillColor = Color.FromArgb($"66{palette.Selection[1..]}"); canvas.FillRectangle(rect);
+                }
+                if (square == selected())
+                {
+                    canvas.FillColor = Color.FromArgb($"88{palette.Selection[1..]}"); canvas.FillRectangle(rect);
+                    canvas.StrokeColor = Color.FromArgb(palette.Selection); canvas.StrokeSize = Math.Max(2, cell * .045f);
+                    canvas.DrawRectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4);
+                }
+                if (ShowLegalMoves && moves().Any(m => m.To == square))
                 {
                     var occupied = !board()[square].IsNone;
-                    canvas.FillColor = Color.FromArgb($"88{(occupied ? palette.Capture : palette.Move)[1..]}");
-                    canvas.FillCircle(rect.Center, occupied ? cell * .42f : cell * .12f);
+                    if (occupied)
+                    {
+                        canvas.StrokeColor = Color.FromArgb(palette.Capture); canvas.StrokeSize = Math.Max(2, cell * .055f);
+                        canvas.DrawCircle(rect.Center, cell * .39f);
+                    }
+                    else
+                    {
+                        canvas.FillColor = Color.FromArgb($"AA{palette.Move[1..]}");
+                        canvas.FillCircle(rect.Center, cell * .105f);
+                    }
                 }
                 var piece = board()[square];
-                if (!piece.IsNone) DrawPiece(canvas, piece, rect, cell);
+                if (!piece.IsNone && !(AnimationMove is { } animation && square == animation.To)) DrawPiece(canvas, piece, rect, cell);
                 if (ShowCoordinates) DrawCoordinates(canvas, rect, cell, file, rank, shownFile, shownRank, isDark, palette);
             }
+            if (AnimationMove is { } animated && !AnimationPiece.IsNone)
+            {
+                var from = DisplayRect(animated.From, cell, ox, oy);
+                var to = DisplayRect(animated.To, cell, ox, oy);
+                var x = from.X + (to.X - from.X) * AnimationProgress;
+                var y = from.Y + (to.Y - from.Y) * AnimationProgress;
+                DrawPiece(canvas, AnimationPiece, new RectF(x, y, cell, cell), cell);
+            }
+        }
+
+        private RectF DisplayRect(int square, float cell, float ox, float oy)
+        {
+            var file = square % 8; var rank = square / 8;
+            var shownFile = Flipped ? 7 - file : file;
+            var shownRank = Flipped ? rank : 7 - rank;
+            return new RectF(ox + shownFile * cell, oy + shownRank * cell, cell, cell);
         }
 
         private void DrawPiece(ICanvas canvas, Piece piece, RectF rect, float cell)

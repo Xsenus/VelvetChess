@@ -82,18 +82,23 @@ try {
     Invoke-Adb @('logcat', '-c') | Out-Null
     Invoke-Adb @('shell', 'monkey', '-p', 'ru.velvetchess.game', '-c', 'android.intent.category.LAUNCHER', '1') | Out-Null
 
-    Find-Text 'Играть против компьютера' | Out-Null
+    Find-Text 'Тактические задачи' | Out-Null
     Capture '01_home.png'
 
     Tap-Text 'Играть против компьютера'
     Find-Text 'Новая партия' | Out-Null
+    Invoke-Adb @('shell', 'input', 'tap', '602', '1266') | Out-Null
+    Start-Sleep -Milliseconds 350
     Capture '02_local_game.png'
+    Invoke-Adb @('shell', 'input', 'tap', '602', '1017') | Out-Null
+    Start-Sleep -Seconds 2
+    Find-Text 'Ваш ход' | Out-Null
     Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
 
     Find-Text 'Тактические задачи' | Out-Null
     Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '850', '450') | Out-Null
     Tap-Text 'Тактические задачи'
-    Find-Text 'Решено 0 из 50' | Out-Null
+    Find-Text 'Нерешённые' | Out-Null
     Capture '03_puzzles.png'
 
     Tap-Text 'Вилка · 1'
@@ -101,18 +106,30 @@ try {
     Capture '04_puzzle_play.png'
     Tap-Text 'Показать решение'
     Tap-Text 'Показать'
-    Start-Sleep -Seconds 1
+    Start-Sleep -Seconds 4
     Capture '06_puzzle_solution.png'
 
     Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
-    Find-Text 'Решено 0 из 50' | Out-Null
+    Find-Text 'Нерешённые' | Out-Null
     Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
-    Find-Text 'Играть против компьютера' | Out-Null
+    Find-Text 'Тактические задачи' | Out-Null
     Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '750', '450') | Out-Null
     Find-Text 'Настройки и о приложении' | Out-Null
     Tap-Text 'Настройки и о приложении'
     Find-Text 'Оформление' | Out-Null
     Capture '05_settings_appearance.png'
+    Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '800', '450') | Out-Null
+    Find-Text 'Показывать возможные ходы' | Out-Null
+    Capture '08_settings_board_behavior.png'
+
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
+    Find-Text 'Профиль и рейтинг' | Out-Null
+    Tap-Text 'Профиль и рейтинг'
+    Find-Text 'Гостевой профиль' | Out-Null
+    Capture '07_profile.png'
+    Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '650', '500') | Out-Null
+    Find-Text 'Я   Войти с Яндекс ID' | Out-Null
+    Capture '09_profile_auth.png'
 
     $fatal = (Invoke-Adb @('logcat', '-d', '-t', '2000', 'AndroidRuntime:E', '*:S')) -join "`n"
     if ($fatal -match 'FATAL EXCEPTION') { throw "AndroidRuntime crash found after navigation:`n$fatal" }

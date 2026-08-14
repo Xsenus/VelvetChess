@@ -46,6 +46,38 @@ public sealed class PuzzleTests
         }
     }
 
+    [Fact]
+    public void SolverMoveAndOpponentReplyCanBePresentedSeparately()
+    {
+        var puzzle = LoadPuzzles().First(item => item.Solution.Count >= 2);
+        var session = new PuzzleSession(puzzle);
+        var result = session.TrySolverMove(puzzle.Solution[0]);
+
+        Assert.Equal(PuzzleMoveResult.Correct, result);
+        Assert.True(session.HasPendingOpponentMove);
+        Assert.Equal(1, session.Ply);
+
+        var reply = session.ApplyOpponentMove();
+        Assert.Equal(puzzle.Solution[1], reply.Uci);
+        Assert.False(session.HasPendingOpponentMove);
+        Assert.Equal(2, session.Ply);
+    }
+
+    [Fact]
+    public void EveryPuzzleCompletesWithSeparatedAnimatedFlow()
+    {
+        foreach (var puzzle in LoadPuzzles())
+        {
+            var session = new PuzzleSession(puzzle);
+            while (!session.IsComplete)
+            {
+                if (session.HasPendingOpponentMove) session.ApplyOpponentMove();
+                else Assert.NotEqual(PuzzleMoveResult.Wrong, session.TrySolverMove(puzzle.Solution[session.Ply]));
+            }
+            Assert.Equal(puzzle.Solution.Count, session.Ply);
+        }
+    }
+
     private static IReadOnlyList<ChessPuzzle> LoadPuzzles()
     {
         var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "puzzles.json"));

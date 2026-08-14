@@ -47,7 +47,10 @@ public sealed class UserStateTests
             HapticsEnabled = false,
             ConfirmNewGame = false,
             PieceTheme = PieceTheme.Royal,
-            BoardTheme = BoardTheme.Forest
+            BoardTheme = BoardTheme.Forest,
+            ShowLegalMoves = false,
+            AnimateMoves = false,
+            HighlightLastMove = false
         };
         state.RecordFinishedGame(new(GameOutcome.Checkmate, PieceColor.White));
         state.RecordFinishedGame(new(GameOutcome.Stalemate));
@@ -57,9 +60,11 @@ public sealed class UserStateTests
         state.ResetProgress();
         Assert.Equal((0, 0, 0), (state.GamesPlayed, state.Wins, state.Draws));
         Assert.Empty(state.CompletedPuzzles);
+        Assert.Equal(1000, state.LocalRating); Assert.Equal(1000, state.PuzzleRating);
         Assert.Equal(Difficulty.Expert, state.Difficulty);
         Assert.False(state.ShowCoordinates); Assert.False(state.HapticsEnabled); Assert.False(state.ConfirmNewGame);
         Assert.Equal(PieceTheme.Royal, state.PieceTheme); Assert.Equal(BoardTheme.Forest, state.BoardTheme);
+        Assert.False(state.ShowLegalMoves); Assert.False(state.AnimateMoves); Assert.False(state.HighlightLastMove);
     }
 
     [Fact]
@@ -73,6 +78,22 @@ public sealed class UserStateTests
         Assert.Equal((0, 0, 0), (state.GamesPlayed, state.Wins, state.Draws));
         Assert.Equal(Difficulty.Expert, state.Difficulty);
         Assert.Equal(PieceTheme.Minimal, state.PieceTheme); Assert.Equal(BoardTheme.Velvet, state.BoardTheme);
+    }
+
+    [Fact]
+    public void RatingsReactToResultsAndPuzzleProgress()
+    {
+        var state = new UserStateStore(new MemoryStore());
+        var initialGame = state.LocalRating; var initialPuzzle = state.PuzzleRating;
+        state.RecordFinishedGame(new(GameOutcome.Checkmate, PieceColor.White), Difficulty.Expert);
+        Assert.True(state.LocalRating > initialGame);
+        Assert.Equal(state.LocalRating, state.BestLocalRating);
+
+        Assert.True(state.MarkPuzzleSolved("rated", 1600));
+        Assert.True(state.PuzzleRating > initialPuzzle);
+        var afterFirstSolve = state.PuzzleRating;
+        Assert.False(state.MarkPuzzleSolved("rated", 1600));
+        Assert.Equal(afterFirstSolve, state.PuzzleRating);
     }
 
     private sealed class MemoryStore : IKeyValueStore
