@@ -1,5 +1,8 @@
 # Шахматы Velvet
 
+[![CI](https://github.com/Xsenus/VelvetChess/actions/workflows/ci.yml/badge.svg)](https://github.com/Xsenus/VelvetChess/actions/workflows/ci.yml)
+[![Privacy policy](https://img.shields.io/badge/privacy-online-D6AE68)](https://xsenus.github.io/VelvetChess/privacy/)
+
 Кроссплатформенная шахматная игра на .NET MAUI для Android, iOS/macOS и Windows. Версия 1.0 ориентирована на полностью офлайн-режим: партия против компьютера и 50 тактических задач.
 
 [Политика конфиденциальности](https://xsenus.github.io/VelvetChess/privacy/) · [Страница проекта](https://xsenus.github.io/VelvetChess/) · лицензия MIT
