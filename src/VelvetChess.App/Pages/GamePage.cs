@@ -14,6 +14,7 @@ public sealed class GamePage : ContentPage
     private readonly Label _status = new() { FontSize = 15, HorizontalTextAlignment = TextAlignment.Center };
     private readonly Label _history = new() { FontSize = 12, TextColor = Color.FromArgb("#9DA7BE"), HorizontalTextAlignment = TextAlignment.Center, LineBreakMode = LineBreakMode.TailTruncation };
     private readonly Picker _difficulty = new() { Title = "Сложность", TextColor = Color.FromArgb("#F3E9D6"), TitleColor = Color.FromArgb("#9DA7BE") };
+    private readonly Label _difficultyDescription = new() { FontSize = 11, TextColor = Color.FromArgb("#9DA7BE") };
     private readonly Button _undo = new() { Text = "Отменить ход", HeightRequest = 48, FontSize = 13, BackgroundColor = Color.FromArgb("#202841"), TextColor = Colors.White };
     private LocalGameSession _session;
     private CancellationTokenSource? _thinking;
@@ -25,8 +26,14 @@ public sealed class GamePage : ContentPage
         _ai = ai; _state = state; _session = state.LoadGame(); Title = "Локальная партия";
         foreach (var level in Enum.GetValues<Difficulty>()) _difficulty.Items.Add(DifficultyProfile.For(level).DisplayName);
         _difficulty.SelectedIndex = (int)state.Difficulty;
-        _difficulty.SelectedIndexChanged += (_, _) => { if (_difficulty.SelectedIndex >= 0) _state.Difficulty = (Difficulty)_difficulty.SelectedIndex; };
-        _boardView.ShowCoordinates = state.ShowCoordinates; _boardView.SetBoard(_session.Board); _boardView.MoveRequested += OnMoveRequested;
+        _difficulty.SelectedIndexChanged += (_, _) =>
+        {
+            if (_difficulty.SelectedIndex < 0) return;
+            _state.Difficulty = (Difficulty)_difficulty.SelectedIndex;
+            UpdateDifficultyDescription();
+        };
+        _boardView.ShowCoordinates = state.ShowCoordinates; _boardView.ShowLegalMoves = state.ShowLegalMoves; _boardView.HighlightLastMove = state.HighlightLastMove;
+        _boardView.SetAppearance(state.PieceTheme, state.BoardTheme); _boardView.SetBoard(_session.Board); _boardView.MoveRequested += OnMoveRequested;
         var restart = new Button { Text = "Новая партия", HeightRequest = 48, FontSize = 13 };
         restart.Clicked += async (_, _) => await ConfirmNewGameAsync();
         _undo.Clicked += (_, _) => UndoTurn();
@@ -36,7 +43,8 @@ public sealed class GamePage : ContentPage
 
         var grid = new Grid { Padding = new Thickness(16,14,16,24), RowSpacing = 10 };
         foreach (var height in new[] { GridLength.Auto, GridLength.Star, GridLength.Auto, GridLength.Auto, GridLength.Auto }) grid.RowDefinitions.Add(new RowDefinition(height));
-        var pickerCard = new Border { Padding = new Thickness(16,8), BackgroundColor = Color.FromArgb("#151B2E"), StrokeThickness = 0, StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 14 }, Content = _difficulty };
+        UpdateDifficultyDescription();
+        var pickerCard = new Border { Padding = new Thickness(16,8), BackgroundColor = Color.FromArgb("#151B2E"), StrokeThickness = 0, StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 14 }, Content = new VerticalStackLayout { Spacing = 0, Children = { _difficulty, _difficultyDescription } } };
         var boardCard = new Border { StrokeThickness = 0, StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 18 }, Content = _boardView };
         grid.Add(pickerCard, 0, 0); grid.Add(boardCard, 0, 1); grid.Add(_status, 0, 2); grid.Add(_history, 0, 3);
         grid.Add(new HorizontalStackLayout { Spacing = 8, HorizontalOptions = LayoutOptions.Center, Children = { restart, _undo, flip } }, 0, 4);
@@ -47,6 +55,10 @@ public sealed class GamePage : ContentPage
     {
         base.OnAppearing();
         _boardView.ShowCoordinates = _state.ShowCoordinates;
+        _boardView.ShowLegalMoves = _state.ShowLegalMoves;
+        _boardView.HighlightLastMove = _state.HighlightLastMove;
+        _boardView.SetAppearance(_state.PieceTheme, _state.BoardTheme);
+        UpdateDifficultyDescription();
         if (_session.Board.SideToMove == PieceColor.Black && !_session.Board.GetStatus().IsFinished) _ = RunAiAsync();
     }
 
@@ -65,7 +77,10 @@ public sealed class GamePage : ContentPage
             if (promotion == PieceType.None) return;
             move = move with { Promotion = promotion };
         }
+        var movingPiece = _session.Board[move.From];
         if (!_session.TryMove(move, out _)) return;
+        _boardView.InputEnabled = false;
+        await _boardView.AnimateMoveAsync(move, movingPiece, _session.Board, _state.AnimateMoves);
         HapticFeedbackIfEnabled();
         _state.SaveGame(_session); Refresh();
         if (_session.Board.GetStatus().IsFinished) { FinishGame(); return; }
@@ -82,7 +97,9 @@ public sealed class GamePage : ContentPage
             var reply = await _ai.FindMoveAsync(_session.Board.Clone(), _state.Difficulty, cancellation.Token);
             if (reply.HasValue && !cancellation.IsCancellationRequested)
             {
+                var movingPiece = _session.Board[reply.Value.From];
                 _session.TryMove(reply.Value, out _);
+                await _boardView.AnimateMoveAsync(reply.Value, movingPiece, _session.Board, _state.AnimateMoves);
                 HapticFeedbackIfEnabled();
             }
             _state.SaveGame(_session);
@@ -118,7 +135,8 @@ public sealed class GamePage : ContentPage
 
     private void Refresh()
     {
-        _boardView.SetBoard(_session.Board);
+        var lastMove = _session.History.Count > 0 ? Move.ParseUci(_session.History[^1].Uci) : (Move?)null;
+        _boardView.SetBoard(_session.Board, lastMove);
         var status = _session.Board.GetStatus();
         _status.Text = status.Outcome switch
         {
@@ -140,6 +158,12 @@ public sealed class GamePage : ContentPage
     private void HapticFeedbackIfEnabled()
     {
         if (!_state.HapticsEnabled || !HapticFeedback.Default.IsSupported) return;
-        try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch (FeatureNotSupportedException) { }
+        try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch (Exception) { /* Optional feedback must never interrupt a game. */ }
+    }
+
+    private void UpdateDifficultyDescription()
+    {
+        var profile = DifficultyProfile.For(_state.Difficulty);
+        _difficultyDescription.Text = $"{profile.Description}  ·  Ваш локальный рейтинг: {_state.LocalRating}";
     }
 }

@@ -13,10 +13,20 @@ public sealed class AppStateService
     public bool ShowCoordinates { get => _state.ShowCoordinates; set => _state.ShowCoordinates = value; }
     public bool HapticsEnabled { get => _state.HapticsEnabled; set => _state.HapticsEnabled = value; }
     public bool ConfirmNewGame { get => _state.ConfirmNewGame; set => _state.ConfirmNewGame = value; }
+    public PieceTheme PieceTheme { get => _state.PieceTheme; set => _state.PieceTheme = value; }
+    public BoardTheme BoardTheme { get => _state.BoardTheme; set => _state.BoardTheme = value; }
+    public bool ShowLegalMoves { get => _state.ShowLegalMoves; set => _state.ShowLegalMoves = value; }
+    public bool AnimateMoves { get => _state.AnimateMoves; set => _state.AnimateMoves = value; }
+    public bool HighlightLastMove { get => _state.HighlightLastMove; set => _state.HighlightLastMove = value; }
     public bool HasSavedGame => _state.HasSavedGame;
     public int GamesPlayed => _state.GamesPlayed;
     public int Wins => _state.Wins;
     public int Draws => _state.Draws;
+    public int Losses => _state.Losses;
+    public int LocalRating => _state.LocalRating;
+    public int BestLocalRating => _state.BestLocalRating;
+    public int PuzzleRating => _state.PuzzleRating;
+    public int TotalPuzzleAttempts => _state.TotalPuzzleAttempts;
     public int CompletedPuzzleCount => _state.CompletedPuzzles.Count;
     public IReadOnlySet<string> CompletedPuzzles => _state.CompletedPuzzles;
 
@@ -25,8 +35,8 @@ public sealed class AppStateService
     public void ClearGame() => _state.ClearGame();
     public int GetPuzzleAttempts(string id) => _state.GetPuzzleAttempts(id);
     public void RecordPuzzleAttempt(string id) => _state.RecordPuzzleAttempt(id);
-    public bool MarkPuzzleSolved(string id) => _state.MarkPuzzleSolved(id);
-    public void RecordFinishedGame(GameStatus status) => _state.RecordFinishedGame(status);
+    public bool MarkPuzzleSolved(string id, int rating) => _state.MarkPuzzleSolved(id, rating);
+    public void RecordFinishedGame(GameStatus status) => _state.RecordFinishedGame(status, Difficulty);
     public void ResetProgress() => _state.ResetProgress();
 
     private sealed class MauiPreferencesStore : IKeyValueStore

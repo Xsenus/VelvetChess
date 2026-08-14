@@ -149,6 +149,36 @@ public sealed class BoardTests
         Assert.Equal(GameOutcome.Ongoing, board.GetStatus().Outcome);
     }
 
+    [Fact]
+    public void CastlingThroughAnAttackedSquareIsIllegal()
+    {
+        var board = new ChessBoard("4k3/8/8/8/2b5/8/8/4K2R w K - 0 1");
+        Assert.DoesNotContain(board.GenerateLegalMoves(), move => move.Uci == "e1g1");
+    }
+
+    [Fact]
+    public void StalemateAndFiftyMoveRuleAreDetected()
+    {
+        Assert.Equal(GameOutcome.Stalemate, new ChessBoard("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1").GetStatus().Outcome);
+        Assert.Equal(GameOutcome.DrawFiftyMove, new ChessBoard("7k/8/8/8/8/8/6K1/6R1 w - - 100 51").GetStatus().Outcome);
+    }
+
+    [Fact]
+    public void DeterministicLegalPlayoutKeepsFenValid()
+    {
+        var board = new ChessBoard(); var random = new Random(731);
+        for (var ply = 0; ply < 160 && !board.GetStatus().IsFinished; ply++)
+        {
+            var legal = board.GenerateLegalMoves();
+            Assert.NotEmpty(legal);
+            board.ApplyLegalMove(legal[random.Next(legal.Count)]);
+            var roundTrip = new ChessBoard(board.ToFen());
+            Assert.Equal(board.ToFen(), roundTrip.ToFen());
+            Assert.Equal(1, Enumerable.Range(0, 64).Count(square => board[square].Type == PieceType.King && board[square].Color == PieceColor.White));
+            Assert.Equal(1, Enumerable.Range(0, 64).Count(square => board[square].Type == PieceType.King && board[square].Color == PieceColor.Black));
+        }
+    }
+
     private static long Perft(ChessBoard board, int depth)
     {
         if (depth == 0) return 1;

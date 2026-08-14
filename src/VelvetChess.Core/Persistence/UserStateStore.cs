@@ -17,6 +17,14 @@ public sealed class UserStateStore(IKeyValueStore storage)
     private const string CoordinatesKey = "settings.coordinates.v1";
     private const string HapticsKey = "settings.haptics.v1";
     private const string ConfirmNewGameKey = "settings.confirmNewGame.v1";
+    private const string PieceThemeKey = "settings.pieceTheme.v1";
+    private const string BoardThemeKey = "settings.boardTheme.v1";
+    private const string LegalMovesKey = "settings.legalMoves.v1";
+    private const string AnimationsKey = "settings.animations.v1";
+    private const string LastMoveKey = "settings.lastMove.v1";
+    private const string LocalRatingKey = "rating.local.v1";
+    private const string BestLocalRatingKey = "rating.local.best.v1";
+    private const string PuzzleRatingKey = "rating.puzzle.v1";
 
     public Difficulty Difficulty
     {
@@ -27,10 +35,28 @@ public sealed class UserStateStore(IKeyValueStore storage)
     public bool ShowCoordinates { get => storage.GetBool(CoordinatesKey, true); set => storage.SetBool(CoordinatesKey, value); }
     public bool HapticsEnabled { get => storage.GetBool(HapticsKey, true); set => storage.SetBool(HapticsKey, value); }
     public bool ConfirmNewGame { get => storage.GetBool(ConfirmNewGameKey, true); set => storage.SetBool(ConfirmNewGameKey, value); }
+    public PieceTheme PieceTheme
+    {
+        get => (PieceTheme)Math.Clamp(storage.GetInt(PieceThemeKey, (int)PieceTheme.Tournament), 0, 4);
+        set => storage.SetInt(PieceThemeKey, Math.Clamp((int)value, 0, 4));
+    }
+    public BoardTheme BoardTheme
+    {
+        get => (BoardTheme)Math.Clamp(storage.GetInt(BoardThemeKey, (int)BoardTheme.Velvet), 0, 4);
+        set => storage.SetInt(BoardThemeKey, Math.Clamp((int)value, 0, 4));
+    }
+    public bool ShowLegalMoves { get => storage.GetBool(LegalMovesKey, true); set => storage.SetBool(LegalMovesKey, value); }
+    public bool AnimateMoves { get => storage.GetBool(AnimationsKey, true); set => storage.SetBool(AnimationsKey, value); }
+    public bool HighlightLastMove { get => storage.GetBool(LastMoveKey, true); set => storage.SetBool(LastMoveKey, value); }
     public bool HasSavedGame => !string.IsNullOrWhiteSpace(storage.GetString(SavedMovesKey));
     public int GamesPlayed => Math.Max(0, storage.GetInt(GamesKey));
     public int Wins => Math.Clamp(storage.GetInt(WinsKey), 0, GamesPlayed);
     public int Draws => Math.Clamp(storage.GetInt(DrawsKey), 0, GamesPlayed - Wins);
+    public int Losses => Math.Max(0, GamesPlayed - Wins - Draws);
+    public int LocalRating => Math.Clamp(storage.GetInt(LocalRatingKey, 1000), 100, 3000);
+    public int BestLocalRating => Math.Max(LocalRating, Math.Clamp(storage.GetInt(BestLocalRatingKey, 1000), 100, 3000));
+    public int PuzzleRating => Math.Clamp(storage.GetInt(PuzzleRatingKey, 1000), 100, 3000);
+    public int TotalPuzzleAttempts => ReadDictionary(PuzzleAttemptsKey).Values.Sum(value => Math.Max(0, value));
     public HashSet<string> CompletedPuzzles => ReadSet(CompletedPuzzlesKey);
 
     public LocalGameSession LoadGame()
@@ -56,26 +82,32 @@ public sealed class UserStateStore(IKeyValueStore storage)
         storage.SetString(PuzzleAttemptsKey, JsonSerializer.Serialize(attempts));
     }
 
-    public bool MarkPuzzleSolved(string id)
+    public bool MarkPuzzleSolved(string id, int puzzleRating = 1200)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         var completed = ReadSet(CompletedPuzzlesKey);
         if (!completed.Add(id)) return false;
         storage.SetString(CompletedPuzzlesKey, JsonSerializer.Serialize(completed));
+        storage.SetInt(PuzzleRatingKey, UpdatedRating(PuzzleRating, Math.Clamp(puzzleRating, 400, 2800), 1));
         return true;
     }
 
-    public void RecordFinishedGame(GameStatus status)
+    public void RecordFinishedGame(GameStatus status, Difficulty difficulty = Difficulty.Casual)
     {
         storage.SetInt(GamesKey, GamesPlayed + 1);
         if (status.Winner == PieceColor.White) storage.SetInt(WinsKey, Wins + 1);
         else if (status.Winner is null) storage.SetInt(DrawsKey, Draws + 1);
+        var score = status.Winner == PieceColor.White ? 1d : status.Winner is null ? .5d : 0d;
+        var opponent = difficulty switch { Difficulty.Beginner => 800, Difficulty.Casual => 1050, Difficulty.Advanced => 1350, _ => 1650 };
+        var rating = UpdatedRating(LocalRating, opponent, score);
+        storage.SetInt(LocalRatingKey, rating);
+        storage.SetInt(BestLocalRatingKey, Math.Max(BestLocalRating, rating));
         ClearGame();
     }
 
     public void ResetProgress()
     {
-        foreach (var key in new[] { SavedMovesKey, CompletedPuzzlesKey, PuzzleAttemptsKey, GamesKey, WinsKey, DrawsKey }) storage.Remove(key);
+        foreach (var key in new[] { SavedMovesKey, CompletedPuzzlesKey, PuzzleAttemptsKey, GamesKey, WinsKey, DrawsKey, LocalRatingKey, BestLocalRatingKey, PuzzleRatingKey }) storage.Remove(key);
     }
 
     private HashSet<string> ReadSet(string key)
@@ -88,5 +120,11 @@ public sealed class UserStateStore(IKeyValueStore storage)
     {
         try { return JsonSerializer.Deserialize<Dictionary<string, int>>(storage.GetString(key, "{}")) ?? []; }
         catch (JsonException) { storage.Remove(key); return []; }
+    }
+
+    private static int UpdatedRating(int current, int opponent, double score)
+    {
+        var expected = 1d / (1d + Math.Pow(10, (opponent - current) / 400d));
+        return Math.Clamp((int)Math.Round(current + 32 * (score - expected)), 100, 3000);
     }
 }

@@ -11,13 +11,13 @@
 | Локальные шахматы | Полный игровой экран против ИИ | Windows smoke-start; Android Release compile/link/package |
 | Несколько сложностей | 4 профиля с глубиной, временем и случайностью | Тест легальности и поиска мата ИИ |
 | Правила шахмат | Рокировка, en passant, promotion, шах/мат/пат и ничьи | 31 тест, EP-идентичность повторений, perft 197281/97862/2812 |
-| 50 задач и решения | Lichess CC0, подсказки, показ ответа и SAN-варианты | Тест легальности и форматирования каждой полной линии решения |
-| Сохранение | Партия, сложность, настройки, статистика и прогресс задач | Независимый `UserStateStore`, тесты повреждённых данных; iOS Privacy Manifest обновлён |
+| 50 задач и решения | Lichess CC0, автоматический ответ соперника, подсказки и пошаговый разбор | Тест раздельного хода решателя/соперника и каждой полной линии решения |
+| Сохранение | Партия, сложность, настройки, рейтинги, статистика и прогресс задач | Независимый `UserStateStore`, тесты повреждённых данных и повторного начисления рейтинга |
 | Производительность | `GraphicsView`, фоновый ИИ, alpha-beta, iterative deepening, bounded cache | Release linking/AOT Android пройдены |
 | Графика | Бренд-арт, адаптивная доска, собственная иконка, Noto chess font | Android assets успешно скомпилированы; лицензии сохранены |
-| RuStore | Карточка, Markdown/HTML policy, release notes, checklist, icon и 6 скриншотов | Синхронный owner-data генератор; фактические Android API 35 кадры 1080×1920 до 3 МБ |
+| RuStore | Карточка, Markdown/HTML policy, release notes, checklist, icon и 9 скриншотов | Синхронный owner-data генератор; фактические Android API 35 кадры 1080×1920 до 3 МБ |
 | Git и релиз | `main`, CI, gitignore, безопасная воспроизводимая подпись | Постоянный RSA-4096 сертификат владельца, строгий preflight APK/AAB и GitHub Actions workflow |
-| Будущий онлайн | Транспортный контракт и серверный roadmap | `IOnlineMatchService`, `docs/ONLINE-ROADMAP.md` |
+| Профиль и будущий онлайн | Гостевой профиль, локальные рейтинги, ASP.NET Core Account API, PKCE, rotating refresh tokens и CORS для веб-клиента | `IPlayerAccountService`, `VelvetChess.Server`, интеграционные API-тесты, `docs/AUTH-AND-RATING.md` |
 
 ## Требует владельца или внешнего устройства перед отправкой в магазин
 

@@ -8,6 +8,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Drawing.Common
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } else { $null }
 if (-not $sdk) { throw 'ANDROID_HOME or ANDROID_SDK_ROOT is required.' }
@@ -67,8 +68,30 @@ function Tap-Text([string]$Text) {
 
 function Capture([string]$Name) {
     $destination = Join-Path $output $Name
+    Start-Sleep -Milliseconds 500
     Invoke-Adb @('shell', 'screencap', '-p', "/sdcard/$Name") | Out-Null
     Invoke-Adb @('pull', "/sdcard/$Name", $destination) | Out-Null
+
+    # RuStore forbids Android status/navigation UI. Preserve the native 9:16
+    # application frame and mask only the fixed system-bar areas with the app's
+    # own background colour; application content is not cropped or rescaled.
+    $sanitized = "$destination.sanitized.png"
+    $bitmap = [Drawing.Bitmap]::new($destination)
+    try {
+        $graphics = [Drawing.Graphics]::FromImage($bitmap)
+        $background = [Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(11, 16, 32))
+        try {
+            $graphics.FillRectangle($background, 0, 0, $bitmap.Width, 64)
+            $graphics.FillRectangle($background, 0, $bitmap.Height - 48, $bitmap.Width, 48)
+            $bitmap.Save($sanitized, [Drawing.Imaging.ImageFormat]::Png)
+        } finally {
+            $background.Dispose()
+            $graphics.Dispose()
+        }
+    } finally {
+        $bitmap.Dispose()
+    }
+    Move-Item -LiteralPath $sanitized -Destination $destination -Force
     if ((Get-Item -LiteralPath $destination).Length -gt 3MB) { throw "Screenshot exceeds 3 MiB: $Name" }
     Write-Host "Captured: $destination" -ForegroundColor Green
 }
@@ -82,18 +105,23 @@ try {
     Invoke-Adb @('logcat', '-c') | Out-Null
     Invoke-Adb @('shell', 'monkey', '-p', 'ru.velvetchess.game', '-c', 'android.intent.category.LAUNCHER', '1') | Out-Null
 
-    Find-Text 'Играть против компьютера' | Out-Null
+    Find-Text 'Тактические задачи' | Out-Null
     Capture '01_home.png'
 
     Tap-Text 'Играть против компьютера'
     Find-Text 'Новая партия' | Out-Null
+    Invoke-Adb @('shell', 'input', 'tap', '602', '1266') | Out-Null
+    Start-Sleep -Milliseconds 350
     Capture '02_local_game.png'
+    Invoke-Adb @('shell', 'input', 'tap', '602', '1017') | Out-Null
+    Start-Sleep -Seconds 2
+    Find-Text 'Ваш ход' | Out-Null
     Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
 
     Find-Text 'Тактические задачи' | Out-Null
     Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '850', '450') | Out-Null
     Tap-Text 'Тактические задачи'
-    Find-Text 'Решено 0 из 50' | Out-Null
+    Find-Text 'Нерешённые' | Out-Null
     Capture '03_puzzles.png'
 
     Tap-Text 'Вилка · 1'
@@ -101,18 +129,27 @@ try {
     Capture '04_puzzle_play.png'
     Tap-Text 'Показать решение'
     Tap-Text 'Показать'
-    Start-Sleep -Seconds 1
+    Start-Sleep -Seconds 4
     Capture '06_puzzle_solution.png'
 
     Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
-    Find-Text 'Решено 0 из 50' | Out-Null
+    Find-Text 'Нерешённые' | Out-Null
     Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
-    Find-Text 'Играть против компьютера' | Out-Null
+    Find-Text 'Тактические задачи' | Out-Null
     Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '750', '450') | Out-Null
     Find-Text 'Настройки и о приложении' | Out-Null
     Tap-Text 'Настройки и о приложении'
-    Find-Text 'Данные' | Out-Null
-    Capture '05_settings_privacy.png'
+    Find-Text 'Оформление' | Out-Null
+    Capture '05_settings_appearance.png'
+    Invoke-Adb @('shell', 'input', 'swipe', '540', '1750', '540', '800', '450') | Out-Null
+    Find-Text 'Показывать возможные ходы' | Out-Null
+    Capture '08_settings_board_behavior.png'
+
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
+    Find-Text 'Профиль и рейтинг' | Out-Null
+    Tap-Text 'Профиль и рейтинг'
+    Find-Text 'Гостевой профиль' | Out-Null
+    Capture '07_profile.png'
 
     $fatal = (Invoke-Adb @('logcat', '-d', '-t', '2000', 'AndroidRuntime:E', '*:S')) -join "`n"
     if ($fatal -match 'FATAL EXCEPTION') { throw "AndroidRuntime crash found after navigation:`n$fatal" }

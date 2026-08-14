@@ -12,8 +12,13 @@ public sealed class ChessBoardView : GraphicsView
     public ChessBoard Board { get; private set; } = new();
     public bool Flipped { get => _drawable.Flipped; set { _drawable.Flipped = value; Invalidate(); } }
     public bool ShowCoordinates { get => _drawable.ShowCoordinates; set { _drawable.ShowCoordinates = value; Invalidate(); } }
+    public PieceTheme PieceTheme { get => _drawable.PieceTheme; set { _drawable.PieceTheme = value; Invalidate(); } }
+    public BoardTheme BoardTheme { get => _drawable.BoardTheme; set { _drawable.BoardTheme = value; Invalidate(); } }
+    public bool ShowLegalMoves { get => _drawable.ShowLegalMoves; set { _drawable.ShowLegalMoves = value; Invalidate(); } }
+    public bool HighlightLastMove { get => _drawable.HighlightLastMove; set { _drawable.HighlightLastMove = value; Invalidate(); } }
     public bool InputEnabled { get; set; } = true;
     public event EventHandler<Move>? MoveRequested;
+    public event Action<int?>? SelectionChanged;
 
     public ChessBoardView()
     {
@@ -24,8 +29,50 @@ public sealed class ChessBoardView : GraphicsView
         StartInteraction += OnTap;
     }
 
-    public void SetBoard(ChessBoard board) { Board = board; ClearSelection(); }
-    public void ClearSelection() { _selected = -1; _moves = []; Invalidate(); }
+    public void SetBoard(ChessBoard board, Move? lastMove = null)
+    {
+        Board = board;
+        _drawable.LastMove = lastMove;
+        ClearSelection();
+    }
+    public void SetAppearance(PieceTheme pieces, BoardTheme board)
+    {
+        _drawable.PieceTheme = pieces;
+        _drawable.BoardTheme = board;
+        Invalidate();
+    }
+
+    public async Task AnimateMoveAsync(Move move, Piece movingPiece, ChessBoard board, bool enabled = true, uint duration = 220)
+    {
+        Board = board;
+        _drawable.LastMove = move;
+        if (!enabled)
+        {
+            _drawable.ClearAnimation();
+            ClearSelection();
+            return;
+        }
+
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _drawable.BeginAnimation(move, movingPiece);
+        new Animation(value => { _drawable.AnimationProgress = (float)value; Invalidate(); }, 0, 1, Easing.CubicOut)
+            .Commit(this, "piece-move", 16, duration, finished: (_, _) =>
+            {
+                _drawable.ClearAnimation();
+                Invalidate();
+                completion.TrySetResult();
+            });
+        await completion.Task;
+        ClearSelection();
+    }
+
+    public void ClearSelection()
+    {
+        var changed = _selected >= 0;
+        _selected = -1; _moves = []; Invalidate();
+        SemanticProperties.SetDescription(this, "Интерактивная шахматная доска. Коснитесь фигуры, затем поля назначения.");
+        if (changed) SelectionChanged?.Invoke(null);
+    }
 
     private void OnTap(object? sender, TouchEventArgs args)
     {
@@ -42,56 +89,169 @@ public sealed class ChessBoardView : GraphicsView
         var piece = Board[square];
         if (!piece.IsNone && piece.Color == Board.SideToMove)
         {
-            _selected = square; _moves = Board.GenerateLegalMoves().Where(m => m.From == square).ToArray(); Invalidate();
+            _selected = square; _moves = Board.GenerateLegalMoves().Where(m => m.From == square).ToArray();
+            SemanticProperties.SetDescription(this, $"Выбрано поле {ChessSquare.Name(square)}. Доступно ходов: {_moves.Select(move => move.To).Distinct().Count()}.");
+            SelectionChanged?.Invoke(square); Invalidate();
         }
         else ClearSelection();
     }
 
     private sealed class BoardDrawable(Func<ChessBoard> board, Func<int> selected, Func<IReadOnlyList<Move>> moves) : IDrawable
     {
+        private sealed record Palette(string Light, string Dark, string Frame, string Coordinate, string Selection, string Move, string Capture);
+
+        private static readonly IReadOnlyDictionary<BoardTheme, Palette> Palettes = new Dictionary<BoardTheme, Palette>
+        {
+            [BoardTheme.Velvet] = new("#EADCC4", "#74465A", "#151B2E", "#F4E9D8", "#E7B95B", "#28364A", "#A51C30"),
+            [BoardTheme.Walnut] = new("#F0D9B5", "#B58863", "#3A251B", "#FFF1D6", "#F6C453", "#34495E", "#A93226"),
+            [BoardTheme.Forest] = new("#E8EDCF", "#769656", "#24342A", "#F4F7E8", "#F2C94C", "#29483A", "#A33C35"),
+            [BoardTheme.Ocean] = new("#DCEAF2", "#5C86A3", "#182A3A", "#F1F8FC", "#FFD166", "#244A65", "#B33A4A"),
+            [BoardTheme.Graphite] = new("#D8DAE0", "#666C79", "#202329", "#F5F6F8", "#E0B857", "#343A46", "#A63B4B")
+        };
+
         public bool Flipped { get; set; }
         public bool ShowCoordinates { get; set; } = true;
-        private static readonly Color Light = Color.FromArgb("#E6D4B7");
-        private static readonly Color Dark = Color.FromArgb("#6E4051");
+        public PieceTheme PieceTheme { get; set; } = PieceTheme.Tournament;
+        public BoardTheme BoardTheme { get; set; } = BoardTheme.Velvet;
+        public bool ShowLegalMoves { get; set; } = true;
+        public bool HighlightLastMove { get; set; } = true;
+        public Move? LastMove { get; set; }
+        public Move? AnimationMove { get; private set; }
+        public Piece AnimationPiece { get; private set; } = Piece.None;
+        public float AnimationProgress { get; set; }
+
+        public void BeginAnimation(Move move, Piece piece) { AnimationMove = move; AnimationPiece = piece; AnimationProgress = 0; }
+        public void ClearAnimation() { AnimationMove = null; AnimationPiece = Piece.None; AnimationProgress = 0; }
 
         public void Draw(ICanvas canvas, RectF dirtyRect)
         {
+            var palette = Palettes.GetValueOrDefault(BoardTheme, Palettes[BoardTheme.Velvet]);
             var side = Math.Min(dirtyRect.Width, dirtyRect.Height); var cell = side / 8;
             var ox = (dirtyRect.Width - side) / 2; var oy = (dirtyRect.Height - side) / 2;
-            canvas.FillColor = Color.FromArgb("#151B2E"); canvas.FillRectangle(dirtyRect);
+            canvas.FillColor = Color.FromArgb(palette.Frame); canvas.FillRectangle(dirtyRect);
             for (var shownRank = 0; shownRank < 8; shownRank++)
             for (var shownFile = 0; shownFile < 8; shownFile++)
             {
                 var file = Flipped ? 7 - shownFile : shownFile; var rank = Flipped ? shownRank : 7 - shownRank;
                 var square = rank * 8 + file; var rect = new RectF(ox + shownFile * cell, oy + shownRank * cell, cell, cell);
-                canvas.FillColor = (file + rank) % 2 == 0 ? Dark : Light; canvas.FillRectangle(rect);
-                if (square == selected()) { canvas.FillColor = Color.FromArgb("#99E2B85A"); canvas.FillRectangle(rect); }
-                if (moves().Any(m => m.To == square))
+                var isDark = (file + rank) % 2 == 0;
+                canvas.FillColor = Color.FromArgb(isDark ? palette.Dark : palette.Light); canvas.FillRectangle(rect);
+                if (HighlightLastMove && LastMove is { } last && square is var lastSquare && (lastSquare == last.From || lastSquare == last.To))
                 {
-                    canvas.FillColor = board()[square].IsNone ? Color.FromArgb("#88303A49") : Color.FromArgb("#88A51C30");
-                    canvas.FillCircle(rect.Center, board()[square].IsNone ? cell * .12f : cell * .42f);
+                    canvas.FillColor = Color.FromArgb($"66{palette.Selection[1..]}"); canvas.FillRectangle(rect);
+                }
+                if (square == selected())
+                {
+                    canvas.FillColor = Color.FromArgb($"88{palette.Selection[1..]}"); canvas.FillRectangle(rect);
+                    canvas.StrokeColor = Color.FromArgb(palette.Selection); canvas.StrokeSize = Math.Max(2, cell * .045f);
+                    canvas.DrawRectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4);
+                }
+                if (ShowLegalMoves && moves().Any(m => m.To == square))
+                {
+                    var occupied = !board()[square].IsNone;
+                    if (occupied)
+                    {
+                        canvas.StrokeColor = Color.FromArgb(palette.Capture); canvas.StrokeSize = Math.Max(2, cell * .055f);
+                        canvas.DrawCircle(rect.Center, cell * .39f);
+                    }
+                    else
+                    {
+                        canvas.FillColor = Color.FromArgb($"AA{palette.Move[1..]}");
+                        canvas.FillCircle(rect.Center, cell * .105f);
+                    }
                 }
                 var piece = board()[square];
-                if (!piece.IsNone)
-                {
-                    canvas.FontColor = piece.Color == PieceColor.White ? Color.FromArgb("#FFF9EB") : Color.FromArgb("#111629");
-                    canvas.FontSize = cell * .76f; canvas.Font = new Microsoft.Maui.Graphics.Font("ChessPieces");
-                    canvas.DrawString(Symbol(piece), rect, HorizontalAlignment.Center, VerticalAlignment.Center);
-                }
-                if (ShowCoordinates)
-                {
-                    canvas.Font = new Microsoft.Maui.Graphics.Font("OpenSansSemibold");
-                    canvas.FontSize = cell * .14f;
-                    canvas.FontColor = (file + rank) % 2 == 0 ? Light : Dark;
-                    if (shownFile == 0)
-                        canvas.DrawString((rank + 1).ToString(), rect.X + 3, rect.Y + 1, cell - 5, cell, HorizontalAlignment.Left, VerticalAlignment.Top);
-                    if (shownRank == 7)
-                        canvas.DrawString(((char)('a' + file)).ToString(), rect.X + 2, rect.Y, cell - 5, cell - 2, HorizontalAlignment.Right, VerticalAlignment.Bottom);
-                }
+                if (!piece.IsNone && !(AnimationMove is { } animation && square == animation.To)) DrawPiece(canvas, piece, rect, cell);
+                if (ShowCoordinates) DrawCoordinates(canvas, rect, cell, file, rank, shownFile, shownRank, isDark, palette);
+            }
+            if (AnimationMove is { } animated && !AnimationPiece.IsNone)
+            {
+                var from = DisplayRect(animated.From, cell, ox, oy);
+                var to = DisplayRect(animated.To, cell, ox, oy);
+                var x = from.X + (to.X - from.X) * AnimationProgress;
+                var y = from.Y + (to.Y - from.Y) * AnimationProgress;
+                DrawPiece(canvas, AnimationPiece, new RectF(x, y, cell, cell), cell);
             }
         }
 
-        private static string Symbol(Piece piece) => (piece.Color, piece.Type) switch
+        private RectF DisplayRect(int square, float cell, float ox, float oy)
+        {
+            var file = square % 8; var rank = square / 8;
+            var shownFile = Flipped ? 7 - file : file;
+            var shownRank = Flipped ? rank : 7 - rank;
+            return new RectF(ox + shownFile * cell, oy + shownRank * cell, cell, cell);
+        }
+
+        private void DrawPiece(ICanvas canvas, Piece piece, RectF rect, float cell)
+        {
+            var white = piece.Color == PieceColor.White;
+            switch (PieceTheme)
+            {
+                case PieceTheme.Classic:
+                    DrawGlyph(canvas, ClassicSymbol(piece), rect, cell * .76f, white ? "#FFF9EB" : "#111629", "#4A3340", cell * .018f);
+                    break;
+                case PieceTheme.Silhouette:
+                    DrawGlyph(canvas, SolidSymbol(piece.Type), rect, cell * .75f, white ? "#F8F1E4" : "#202637", white ? "#6B5C50" : "#0A0E18", cell * .012f);
+                    break;
+                case PieceTheme.Royal:
+                    canvas.FillColor = Color.FromArgb(white ? "#FFF4D8" : "#1A2440");
+                    canvas.FillCircle(rect.Center, cell * .38f);
+                    canvas.StrokeColor = Color.FromArgb("#C89B45"); canvas.StrokeSize = Math.Max(1, cell * .025f);
+                    canvas.DrawCircle(rect.Center, cell * .38f);
+                    DrawGlyph(canvas, SolidSymbol(piece.Type), rect, cell * .62f, white ? "#7A4F22" : "#E7C576", white ? "#FFF8E7" : "#11182B", cell * .012f);
+                    break;
+                case PieceTheme.Minimal:
+                    canvas.FillColor = Color.FromArgb(white ? "#FAF7F0" : "#202737");
+                    canvas.FillCircle(rect.Center, cell * .35f);
+                    canvas.StrokeColor = Color.FromArgb(white ? "#394152" : "#F1D9A3"); canvas.StrokeSize = Math.Max(1, cell * .022f);
+                    canvas.DrawCircle(rect.Center, cell * .35f);
+                    canvas.Font = new Microsoft.Maui.Graphics.Font("OpenSansSemibold");
+                    canvas.FontSize = cell * .38f; canvas.FontColor = Color.FromArgb(white ? "#283144" : "#F8E7BF");
+                    canvas.DrawString(PieceLetter(piece.Type), rect, HorizontalAlignment.Center, VerticalAlignment.Center);
+                    break;
+                default:
+                    // Both colours use the same solid glyph geometry, giving the set a consistent weight.
+                    DrawGlyph(canvas, SolidSymbol(piece.Type), rect, cell * .77f, white ? "#FFF8E9" : "#182033", white ? "#544755" : "#E5D4B8", cell * .022f);
+                    break;
+            }
+        }
+
+        private static void DrawGlyph(ICanvas canvas, string glyph, RectF rect, float size, string fill, string outline, float offset)
+        {
+            canvas.Font = new Microsoft.Maui.Graphics.Font("ChessPieces"); canvas.FontSize = size;
+            if (offset > 0)
+            {
+                canvas.FontColor = Color.FromArgb(outline);
+                foreach (var (dx, dy) in new[] { (-offset, 0f), (offset, 0f), (0f, -offset), (0f, offset) })
+                    canvas.DrawString(glyph, new RectF(rect.X + dx, rect.Y + dy, rect.Width, rect.Height), HorizontalAlignment.Center, VerticalAlignment.Center);
+            }
+            canvas.FontColor = Color.FromArgb(fill);
+            canvas.DrawString(glyph, rect, HorizontalAlignment.Center, VerticalAlignment.Center);
+        }
+
+        private static void DrawCoordinates(ICanvas canvas, RectF rect, float cell, int file, int rank, int shownFile, int shownRank, bool isDark, Palette palette)
+        {
+            canvas.Font = new Microsoft.Maui.Graphics.Font("OpenSansSemibold"); canvas.FontSize = cell * .14f;
+            canvas.FontColor = Color.FromArgb(isDark ? palette.Coordinate : palette.Dark);
+            if (shownFile == 0)
+                canvas.DrawString((rank + 1).ToString(), rect.X + 3, rect.Y + 1, cell - 5, cell, HorizontalAlignment.Left, VerticalAlignment.Top);
+            if (shownRank == 7)
+                canvas.DrawString(((char)('a' + file)).ToString(), rect.X + 2, rect.Y, cell - 5, cell - 2, HorizontalAlignment.Right, VerticalAlignment.Bottom);
+        }
+
+        private static string SolidSymbol(PieceType type) => type switch
+        {
+            PieceType.King => "♚", PieceType.Queen => "♛", PieceType.Rook => "♜", PieceType.Bishop => "♝",
+            PieceType.Knight => "♞", PieceType.Pawn => "♟", _ => ""
+        };
+
+        private static string PieceLetter(PieceType type) => type switch
+        {
+            PieceType.King => "K", PieceType.Queen => "Q", PieceType.Rook => "R", PieceType.Bishop => "B",
+            PieceType.Knight => "N", PieceType.Pawn => "P", _ => ""
+        };
+
+        private static string ClassicSymbol(Piece piece) => (piece.Color, piece.Type) switch
         {
             (PieceColor.White, PieceType.King) => "♔", (PieceColor.White, PieceType.Queen) => "♕", (PieceColor.White, PieceType.Rook) => "♖",
             (PieceColor.White, PieceType.Bishop) => "♗", (PieceColor.White, PieceType.Knight) => "♘", (PieceColor.White, PieceType.Pawn) => "♙",

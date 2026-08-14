@@ -13,6 +13,7 @@ jobs:
         with:
           dotnet-version: 9.0.x
       - run: dotnet test tests/VelvetChess.Core.Tests/VelvetChess.Core.Tests.csproj -c Release
+      - run: dotnet test tests/VelvetChess.Server.Tests/VelvetChess.Server.Tests.csproj -c Release
       - run: pwsh -NoProfile -File scripts/Test-RuStoreReadiness.ps1 -SkipTests
 
   android-compile:
